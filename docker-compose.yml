@@ -1,0 +1,10 @@
+services:
+  mcp:
+    image: mcp_server:latest
+    ports:
+      - "30087:30087"
+    volumes:
+      - "./src/:/app/src"
+    command: ["python", "/app/src/mcp_server.py"]
+    # command: ["uvicorn", "src/mcp_server:app", "--host", "0.0.0.0", "--port", "8083"]
+    # ["uvicorn", "mcp_server:app", "--host", "0.0.0.0", "--port", "8083"] 

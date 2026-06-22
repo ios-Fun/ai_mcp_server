@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+
+# Copy the rest of the application
+COPY ./src_deerflow /app/src
+
+COPY app.py /app.py
+
+# Expose the port the app runs on
+EXPOSE 8084
+
+# Command to run the application
+# CMD ["uvicorn", "mcp_server:app", "--host", "0.0.0.0", "--port", "8084"] 
