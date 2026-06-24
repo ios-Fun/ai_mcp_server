@@ -101,15 +101,22 @@ def deviceRag(param_list: list) -> str:
         return "发送失败"
 
 @mcp.tool()
-def tagTrend(tagInfo: str) -> str:
-    """显示测点趋势
+def tagTrend(param_list: list) -> str:
+    """显示测点实际值
 
-    :param tagInfo: 测点的编码信息
+    :param param_list: 诊断单的信息
     Returns:
         字符串
     """
-    logging.info(f"tagTrend: {tagTrend}")
-    return "趋势正常"
+    logging.info(f"tagTrend: {param_list}")
+    java_url = os.getenv("SERVER_URL")+"/device/tagsTrend"
+    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
 
 # Create SSE transport
 transport = SseServerTransport("/messages/")
