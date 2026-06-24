@@ -71,6 +71,7 @@ def graphshow(param_list: list) -> str:
     logging.info(f"graphshow: {param_list}")
     # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
     java_url = os.getenv("SERVER_URL")+"/device/graph/show"
+
     response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
@@ -79,6 +80,25 @@ def graphshow(param_list: list) -> str:
     else:
         return "发送失败"
 
+@mcp.tool()
+def deviceRag(param_list: list) -> str:
+    """查询rag信息
+
+    :param param_list: 诊断单的信息
+    Returns:
+        字符串
+    """
+    logging.info(f"deviceRag: {param_list}")
+    # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
+    java_url = os.getenv("SERVER_URL")+"/device/rag/v2"
+
+    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
 
 @mcp.tool()
 def tagTrend(tagInfo: str) -> str:
