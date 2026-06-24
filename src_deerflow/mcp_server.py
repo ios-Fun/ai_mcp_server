@@ -23,26 +23,73 @@ mcp = FastMCP("ClickHouse MCP Server")
 
 # Define an MCP tool to execute ClickHouse queries
 @mcp.tool()
-def device_healthy(device: str, startTime: str, endTime: str, num: int, unit: str) -> str:
+def device_healthy(orginal: str) -> str:
     """设备的健康状态评估
 
-    :param device: 设备名或诊断单id (如：磨煤机D, 1233323).
-    :param startTime: 开始日期, 时间格式：%Y-%m-%dT%H:%M:%S+08:00.
-    :param endTime: 结束时间, 时间格式：%Y-%m-%dT%H:%M:%S+08:00.
-    :param num: 时间的数字
-    :param unit: 时间的单位(如：day, week, month)
+    :param orginal: 原文
     Returns:
-        类型和参数的字典
+        字符串
     """
-    logging.info("device_healthy: {device}, {startTime}, {endTime}, {num}, {unit}")
-    url = os.getenv("SERVER_URL")
-    response = requests.post(url=url, json={}, headers={"Content-Type": "application/json"})
+    logging.info(f"device_healthy: {orginal}")
+    
+    # rasa
+    rasa_url = os.getenv("RASA_URL")
+    rasa_data = {
+        "sender":"sender002", "message":orginal
+    }
+    rasa_response = requests.post(url=rasa_url, json=rasa_data, headers={"Content-Type": "application/json"})
+    logging.info(f"rasa_response: {rasa_response.text}")
+    
+    rasa_obj = rasa_response.text
+    data = json.loads(rasa_obj)
+
+    logging.info(f"first: {data[0]}")
+    first_text = data[0]["text"]
+    logging.info(f"first_text: {first_text}")
+    
+    second_custom = data[1]["custom"]
+    logging.info(f"second_custom: {second_custom}")
+    
+    java_url = os.getenv("SERVER_URL")+"/device/healthy/v2"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=second_custom, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"response: {response.text}")
-        return "发送成功"
+        return response.text
     else:
         return "发送失败"
+
+@mcp.tool()
+def graphshow(param_list: list) -> str:
+    """显示故障模式
+
+    :param param_list: 诊断单的信息
+    Returns:
+        字符串
+    """
+    logging.info(f"graphshow: {param_list}")
+    # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
+    java_url = os.getenv("SERVER_URL")+"/device/graph/show"
+    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+
+
+@mcp.tool()
+def tagTrend(tagInfo: str) -> str:
+    """显示测点趋势
+
+    :param tagInfo: 测点的编码信息
+    Returns:
+        字符串
+    """
+    logging.info(f"tagTrend: {tagTrend}")
+    return "趋势正常"
 
 # Create SSE transport
 transport = SseServerTransport("/messages/")
