@@ -23,7 +23,7 @@ mcp = FastMCP("ClickHouse MCP Server")
 
 # Define an MCP tool to execute ClickHouse queries
 @mcp.tool()
-def device_healthy(orginal: str) -> str:
+def cg_device_healthy(orginal: str) -> str:
     """设备的健康状态评估
 
     :param orginal: 原文
@@ -50,7 +50,7 @@ def device_healthy(orginal: str) -> str:
     second_custom = data[1]["custom"]
     logging.info(f"second_custom: {second_custom}")
     
-    java_url = os.getenv("SERVER_URL")+"/device/healthy/v2"
+    java_url = os.getenv("SERVER_URL")+"/device/healthy/v3"
     logging.info(f"java_url: {java_url}")
     response = requests.post(url=java_url, json=second_custom, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
@@ -61,18 +61,18 @@ def device_healthy(orginal: str) -> str:
         return "发送失败"
 
 @mcp.tool()
-def graphshow(param_list: list) -> str:
+def cg_graphshow(cached_defectIds: list) -> str:
     """显示故障模式
 
-    :param param_list: 诊断单的信息
+    :param cached_defectIds: 诊断单的信息
     Returns:
         字符串
     """
-    logging.info(f"graphshow: {param_list}")
+    logging.info(f"graphshow: {cached_defectIds}")
     # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
     java_url = os.getenv("SERVER_URL")+"/device/graph/show"
 
-    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"response: {response.text}")
@@ -81,18 +81,18 @@ def graphshow(param_list: list) -> str:
         return "发送失败"
 
 @mcp.tool()
-def deviceRag(param_list: list) -> str:
+def cg_deviceRag(cached_defectIds: list) -> str:
     """查询rag信息
 
-    :param param_list: 诊断单的信息
+    :param cached_defectIds: 诊断单的信息
     Returns:
         字符串
     """
-    logging.info(f"deviceRag: {param_list}")
+    logging.info(f"deviceRag: {cached_defectIds}")
     # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
     java_url = os.getenv("SERVER_URL")+"/device/rag/v2"
 
-    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"response: {response.text}")
@@ -101,16 +101,52 @@ def deviceRag(param_list: list) -> str:
         return "发送失败"
 
 @mcp.tool()
-def tagTrend(param_list: list) -> str:
+def cg_tagsRealtimeValues(cached_defectIds: list) -> str:
     """显示测点实际值
 
-    :param param_list: 诊断单的信息
+    :param cached_defectIds: 诊断单的信息
     Returns:
         字符串
     """
-    logging.info(f"tagTrend: {param_list}")
+    logging.info(f"tagsRealtimeValues: {cached_defectIds}")
+    java_url = os.getenv("SERVER_URL")+"/device/tagsRealtime"
+    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+
+@mcp.tool()
+def cg_tagsInfoList(cached_defectIds: list) -> dict:
+    """获取测点信息
+
+    :param cached_defectIds: 诊断单的信息
+    Returns:
+        字典信息
+    """
+    logging.info(f"tagsInfoList: {cached_defectIds}")
+    java_url = os.getenv("SERVER_URL")+"/device/tagsInfoList"
+    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+
+@mcp.tool()
+def cg_tagTrend(cached_TagsTrendPara: any) -> str:
+    """显示测点实际值
+
+    :param cached_TagsTrendPara: 测点的信息，或cached_defectIds，没有值就传空值作为默认值
+    Returns:
+        字符串
+    """
+    logging.info(f"cg_tagTrend: {cached_TagsTrendPara}")
     java_url = os.getenv("SERVER_URL")+"/device/tagsTrend"
-    response = requests.post(url=java_url, json=param_list, headers={"Content-Type": "application/json"})
+    response = requests.post(url=java_url, json=cached_TagsTrendPara, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"response: {response.text}")
