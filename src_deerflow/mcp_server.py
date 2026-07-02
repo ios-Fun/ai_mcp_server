@@ -23,14 +23,15 @@ mcp = FastMCP("ClickHouse MCP Server")
 
 # Define an MCP tool to execute ClickHouse queries
 @mcp.tool()
-def cg_device_healthy(orginal: str) -> str:
+def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
     """设备的健康状态评估
 
     :param orginal: 原文
+    :param thread_id: 线程id
     Returns:
         字符串
     """
-    logging.info(f"device_healthy: {orginal}")
+    logging.info(f"cg_device_healthy: {orginal}")
     
     # rasa
     rasa_url = os.getenv("RASA_URL")
@@ -55,92 +56,117 @@ def cg_device_healthy(orginal: str) -> str:
     response = requests.post(url=java_url, json=second_custom, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_device_healthy response: {response.text}")
         return response.text
     else:
         return "发送失败"
 
 @mcp.tool()
-def cg_graphshow(cached_defectIds: list) -> str:
+def cg_graphshow(cached_defectIds: list, thread_id: str = "") -> str:
     """显示故障模式
 
     :param cached_defectIds: 诊断单的信息
+    :param thread_id: 线程id
     Returns:
         字符串
     """
-    logging.info(f"graphshow: {cached_defectIds}")
+    logging.info(f"cg_graphshow: {cached_defectIds}")
     # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
     java_url = os.getenv("SERVER_URL")+"/device/graph/show"
 
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_graphshow response: {response.text}")
         return response.text
     else:
         return "发送失败"
 
 @mcp.tool()
-def cg_deviceRag(cached_defectIds: list) -> str:
+def cg_deviceRag(cached_defectIds: list, thread_id: str = "") -> str:
     """查询rag信息
 
     :param cached_defectIds: 诊断单的信息
+    :param thread_id: 线程id    
     Returns:
         字符串
     """
-    logging.info(f"deviceRag: {cached_defectIds}")
-    # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
+    logging.info(f"cg_deviceRag: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/rag/v2"
 
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_deviceRag response: {response.text}")
         return response.text
     else:
         return "发送失败"
-
+        
+        
 @mcp.tool()
-def cg_tagsRealtimeValues(cached_defectIds: list) -> str:
-    """显示测点实际值
+def deviceRag(ragInfo: str, thread_id: str = "") -> str:
+    """查询rag信息
 
-    :param cached_defectIds: 诊断单的信息
+    :param ragInfo: 待检索关键信息
+    :param thread_id: 线程id    
     Returns:
         字符串
     """
-    logging.info(f"tagsRealtimeValues: {cached_defectIds}")
-    java_url = os.getenv("SERVER_URL")+"/device/tagsRealtime"
-    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"deviceRag: {ragInfo}")
+    java_url = os.getenv("SERVER_URL")+"/device/rag"
+
+    response = requests.post(url=java_url, json=ragInfo, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_deviceRag response: {response.text}")
         return response.text
     else:
         return "发送失败"
 
 @mcp.tool()
-def cg_tagsInfoList(cached_defectIds: list) -> dict:
+def cg_tagsRealtimeValues(cached_defectIds: list, thread_id: str = "") -> str:
+    """显示测点实际值
+
+    :param cached_defectIds: 诊断单的信息
+    :param thread_id: 线程id    
+    Returns:
+        字符串
+    """
+    logging.info(f"cg_tagsRealtimeValues: {cached_defectIds}")
+    java_url = os.getenv("SERVER_URL")+"/device/tagsRealTime"
+    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"cg_tagsRealtimeValues response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+
+@mcp.tool()
+def cg_tagsInfoList(cached_defectIds: list, thread_id: str = "") -> str:
     """获取测点信息
 
     :param cached_defectIds: 诊断单的信息
+    :param thread_id: 线程id    
     Returns:
         字典信息
     """
-    logging.info(f"tagsInfoList: {cached_defectIds}")
+    logging.info(f"cg_tagsInfoList: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/tagsInfoList"
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_tagsInfoList response: {response.text}")
         return response.text
     else:
         return "发送失败"
 
 @mcp.tool()
-def cg_tagTrend(cached_TagsTrendPara: any) -> str:
+def cg_tagTrend(cached_TagsTrendPara: list, thread_id: str = "") -> str:
     """显示测点实际值
 
-    :param cached_TagsTrendPara: 测点的信息，或cached_defectIds，没有值就传空值作为默认值
+    :param cached_TagsTrendPara: 测点的信息
+    :param thread_id: 线程id    
     Returns:
         字符串
     """
@@ -149,7 +175,7 @@ def cg_tagTrend(cached_TagsTrendPara: any) -> str:
     response = requests.post(url=java_url, json=cached_TagsTrendPara, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"response: {response.text}")
+        logging.info(f"cg_tagTrend response: {response.text}")
         return response.text
     else:
         return "发送失败"
