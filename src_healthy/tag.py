@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # ========== 配置区域 ==========
-JAVA_BASE_URL = os.getenv("JAVA_BASE_URL", "http://localhost:28080")
+JAVA_BASE_URL = os.getenv("JAVA_BASE_URL", "http://192.168.0.44:28080")
 MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
 MCP_PORT = int(os.getenv("MCP_PORT", "8003"))
 # ==============================
@@ -54,7 +54,7 @@ class JavaBackendClient:
         url = f"{self.base_url}{path}"
         try:
             logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-            resp = await self.client.post(url, json=payload)
+            resp = await self.client.post(url, params=payload)
             resp.raise_for_status()
             return resp.text
         except httpx.HTTPStatusError as e:
@@ -114,7 +114,7 @@ async def search_tags(
     tag_id: Optional[int] = None,
     tag_code: Optional[str] = None,
     src_tag_name: Optional[str] = None,
-    tag_name: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> str:
     """
     测点信息查询工具。
@@ -123,13 +123,13 @@ async def search_tags(
     2. 模糊查询: 通过 tag_name(测点名称) 进行模糊匹配
     
     注意: 精确查询的三个参数(tag_id/tag_code/src_tag_name)只需填写一个即可,如果同时提供多个,优先级为: tag_id > tag_code > src_tag_name
-    如果使用模糊查询(tag_name),则不能同时使用精确查询参数。
+    如果使用模糊查询(name),则不能同时使用精确查询参数。
 
     Args:
         tag_id: 测点ID(可选),精确匹配
         tag_code: 测点编码(可选),精确匹配
         src_tag_name: 源标签点名(可选),精确匹配
-        tag_name: 测点名称(可选),模糊匹配
+        name: 测点名称(可选),模糊匹配
     
     Returns:
         测点信息列表,包含测点ID、名称、编码、源标签点名、单位、描述等信息
@@ -139,14 +139,14 @@ async def search_tags(
     if tag_id is not None:
         payload["tagId"] = tag_id
     if tag_code:
-        payload["tagCode"] = tag_code
+        payload["tagName"] = tag_code
     if src_tag_name:
         payload["srcTagName"] = src_tag_name
-    if tag_name:
-        payload["tagName"] = tag_name
+    if name:
+        payload["name"] = name
     
     if not payload:
-        return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name/tag_name)"
+        return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name/name)"
     
     return await backend_client._post("/ai/tag/getTagInfos", payload)
 
@@ -177,7 +177,7 @@ async def get_tag_paths(
     if tag_id is not None:
         payload["tagId"] = tag_id
     elif tag_code:
-        payload["tagCode"] = tag_code
+        payload["tagName"] = tag_code
     elif src_tag_name:
         payload["srcTagName"] = src_tag_name
     else:
@@ -194,16 +194,17 @@ async def get_tag_values(
     src_tag_name: Optional[str] = None,
     start_time: Optional[str] = None,
     end_time: Optional[str] = None,
+    type:[str] = "RealTimeData",
 ) -> str:
     """
     测点历史数据查询工具。
-    通过测点ID、编码或源标签点名精确查找指定时间段内的测点数据,包括:
-    - 实际值(actual_value)
-    - 估计值(estimated_value)
-    - 严重度(severity)
+    通过测点ID、编码或源标签点名精确查找指定时间段内的测点数据type,包括:
+    - 实际值(RealTimeData)
+    - 估计值(Estimate)
+    - 严重度(TagSeverity)
     
     如果不传时间参数,默认查询最近6小时到现在的数据。
-    三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_id > tag_code > src_tag_name
+    三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
 
     Args:
         tag_id: 测点ID(可选),精确匹配
@@ -211,7 +212,7 @@ async def get_tag_values(
         src_tag_name: 源标签点名(可选),精确匹配
         start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
         end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
-    
+        type: 查询类型(必填),默认为实际值(RealTimeData),可选值: RealTimeData,Estimate,TagSeverity,all
     Returns:
         测点历史数据列表,包含时间戳、实际值、估计值、严重度等信息
     """
@@ -219,7 +220,7 @@ async def get_tag_values(
     if tag_id is not None:
         payload["tagId"] = tag_id
     elif tag_code:
-        payload["tagCode"] = tag_code
+        payload["tagName"] = tag_code
     elif src_tag_name:
         payload["srcTagName"] = src_tag_name
     else:
@@ -229,6 +230,7 @@ async def get_tag_values(
         payload["startTime"] = start_time
     if end_time:
         payload["endTime"] = end_time
+    payload["type"] = type
     
     # 如果没有传时间,默认查询最近6小时
     if not start_time and not end_time:
