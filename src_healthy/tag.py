@@ -134,9 +134,6 @@ async def search_tags(
     Returns:
         测点信息列表,包含测点ID、名称、编码、源标签点名、单位、描述等信息
     """
-    # TODO: 实现测点查询逻辑
-    # 需要调用 Java 后端接口,例如: /ai/tag/search
-    # 根据传入的参数构建请求体并调用后端接口
     
     payload = {}
     if tag_id is not None:
@@ -151,10 +148,7 @@ async def search_tags(
     if not payload:
         return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name/tag_name)"
     
-    # 示例: 调用后端接口(待实现)
-    # return await backend_client._post("/ai/tag/search", payload)
-    
-    return f"TODO: 实现测点查询功能\n查询参数: {payload}\n需要补充 Java 后端接口调用"
+    return await backend_client._post("/ai/tag/getTagInfos", payload)
 
 
 @mcp.tool()
@@ -178,10 +172,7 @@ async def get_tag_paths(
     Returns:
         测点挂载路径列表,每条路径包含完整的层级关系(如: 机组->系统->子系统->设备->测点)
     """
-    # TODO: 实现测点路径查询逻辑
-    # 需要调用 Java 后端接口,例如: /ai/tag/paths
-    # 根据传入的参数构建请求体并调用后端接口
-    
+
     payload = {}
     if tag_id is not None:
         payload["tagId"] = tag_id
@@ -191,11 +182,9 @@ async def get_tag_paths(
         payload["srcTagName"] = src_tag_name
     else:
         return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name)"
+
+    return await backend_client._post("/ai/tag/getTagPaths", payload)
     
-    # 示例: 调用后端接口(待实现)
-    # return await backend_client._post("/ai/tag/paths", payload)
-    
-    return f"TODO: 实现测点路径查询功能\n查询参数: {payload}\n需要补充 Java 后端接口调用"
 
 
 @mcp.tool()
@@ -226,10 +215,6 @@ async def get_tag_values(
     Returns:
         测点历史数据列表,包含时间戳、实际值、估计值、严重度等信息
     """
-    # TODO: 实现测点历史数据查询逻辑
-    # 需要调用 Java 后端接口,例如: /ai/tag/values
-    # 根据传入的参数构建请求体并调用后端接口
-    
     payload = {}
     if tag_id is not None:
         payload["tagId"] = tag_id
@@ -253,10 +238,7 @@ async def get_tag_values(
         payload["startTime"] = six_hours_ago.strftime("%Y-%m-%dT%H:%M:%S+00:00")
         payload["endTime"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
     
-    # 示例: 调用后端接口(待实现)
-    # return await backend_client._post("/ai/tag/values", payload)
-    
-    return f"TODO: 实现测点历史数据查询功能\n查询参数: {payload}\n需要补充 Java 后端接口调用"
+    return await backend_client._post("/ai/tag/tagValues", payload)
 
 
 # ========== MCP 标准 SSE 传输层配置 ==========
