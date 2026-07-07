@@ -121,9 +121,8 @@ async def unit_healthy(
     closed: Optional[bool] = None,
 ) -> str:
     """
-    机组健康度数据获取（不含 RAG）。
-    一次性返回：诊断单信息 + 故障模式推导图 + 测点实时值。
-    适用于大模型先做初步分析，再由 Java 后端根据分析结果调 RAG 的场景。
+    机组健康度数据获取（若用户不指定，不调用该工具）。
+    一次性返回：诊断单信息 + 故障模式推导图 + 测点实时值+调 RAG 的场景。
 
     Args:
         unit_name: 机组名称（必填），如 "京燃"
@@ -207,6 +206,114 @@ async def device_rag(tag_name: str) -> str:
         tag_name: 测点名称，多个用逗号分隔，内容精简在 50 字以内
     """
     return await backend_client._get("/ai/device/rag", {"tagName": tag_name})
+
+
+@mcp.tool()
+async def get_alarm_list(
+    unit_id: Optional[int] = None,
+    tag_name: Optional[str] = None,
+    tag_source_name: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    asset_number: Optional[int] = None,
+    data_type: Optional[str] = None,
+    current_status_name: Optional[str] = None,
+    tag_id: Optional[int] = None,
+    monitor_point_id: Optional[int] = None,
+    closed: Optional[bool] = None,
+) -> str:
+    """
+    查询测点报警单列表。支持多维度筛选告警信息。
+
+    Args:
+        unit_id: 机组ID（可选），查询特定机组下的所有告警
+        tag_name: 测点名称（可选），用于模糊匹配
+        tag_source_name: 测点来源名称（可选）
+        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        asset_number: 设备编号（可选）
+        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        current_status_name: 当前状态名称（可选），如 "待处理"、"处理中"、"已关闭"
+        tag_id: 测点ID（可选），精确查询某个测点的告警
+        monitor_point_id: 监测点ID（可选）
+        closed: 是否已关闭（可选，默认false），true表示查询已关闭的告警
+    """
+    payload = {}
+    if unit_id is not None: payload["unitId"] = unit_id
+    if tag_name: payload["tagName"] = tag_name
+    if tag_source_name: payload["tagSourceName"] = tag_source_name
+    if start_time: payload["startTime"] = start_time
+    if end_time: payload["endTime"] = end_time
+    if asset_number is not None: payload["assetNumber"] = asset_number
+    if data_type: payload["dataType"] = data_type
+    if current_status_name: payload["currentStatusName"] = current_status_name
+    if tag_id is not None: payload["tagId"] = tag_id
+    if monitor_point_id is not None: payload["monitorPointId"] = monitor_point_id
+    if closed is not None: payload["closed"] = closed
+
+    return await backend_client._post("/ai/unit/getAlarmList", payload)
+
+
+@mcp.tool()
+async def get_system_incident_list(
+    unit_id: Optional[int] = None,
+    system_id: Optional[int] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    current_status: Optional[str] = None,
+    closed: Optional[bool] = None,
+) -> str:
+    """
+    查询系统诊断单列表。支持多维度筛选系统级诊断单信息。
+
+    Args:
+        unit_id: 机组ID（可选），查询特定机组下的系统诊断单
+        system_id: 系统ID（可选），查询特定系统的诊断单
+        start_time: 开始时间（可选），与 end_time 配合使用
+        end_time: 结束时间（可选），与 start_time 配合使用
+        current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
+        closed: 是否已关闭（可选，默认false），true表示查询已关闭的诊断单
+    """
+    payload = {}
+    if unit_id is not None: payload["unitId"] = unit_id
+    if system_id is not None: payload["systemId"] = system_id
+    if start_time: payload["startTime"] = start_time
+    if end_time: payload["endTime"] = end_time
+    if current_status: payload["currentStatus"] = current_status
+    if closed is not None: payload["closed"] = closed
+
+    return await backend_client._post("/ai/unit/getSystemIncidentList", payload)
+
+
+@mcp.tool()
+async def get_sub_system_incident_list(
+    unit_id: Optional[int] = None,
+    sub_system_id: Optional[int] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    current_status: Optional[str] = None,
+    closed: Optional[bool] = None,
+) -> str:
+    """
+    查询子系统诊断单列表。支持多维度筛选子系统级诊断单信息。
+
+    Args:
+        unit_id: 机组ID（可选），查询特定机组下的子系统诊断单
+        sub_system_id: 子系统ID（可选），查询特定子系统的诊断单
+        start_time: 开始时间（可选），与 end_time 配合使用
+        end_time: 结束时间（可选），与 start_time 配合使用
+        current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
+        closed: 是否已关闭（可选，默认false），true表示查询已关闭的诊断单
+    """
+    payload = {}
+    if unit_id is not None: payload["unitId"] = unit_id
+    if sub_system_id is not None: payload["subSystemId"] = sub_system_id
+    if start_time: payload["startTime"] = start_time
+    if end_time: payload["endTime"] = end_time
+    if current_status: payload["currentStatus"] = current_status
+    if closed is not None: payload["closed"] = closed
+
+    return await backend_client._post("/ai/unit/getSubSystemIncidentList", payload)
 
 
 # ========== MCP 标准 SSE 传输层配置 ==========
