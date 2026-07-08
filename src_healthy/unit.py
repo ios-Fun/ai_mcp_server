@@ -121,8 +121,10 @@ async def unit_healthy(
     closed: Optional[bool] = None,
 ) -> str:
     """
-    机组健康度数据获取（若用户不指定，不调用该工具）。
-    一次性返回：诊断单信息 + 故障模式推导图 + 测点实时值+调 RAG 的场景。
+    【特殊需求专用】机组健康度数据获取。
+    
+    ⚠️ 注意：此工具仅在用户明确要求执行"机组健康度简单分析"或"unit_healthy"时调用，不要主动使用。
+    一次性返回：诊断单信息 + 故障模式推导图 + 测点实时值。
 
     Args:
         unit_name: 机组名称（必填），如 "京燃"
@@ -227,20 +229,20 @@ async def get_alarm_list(
 
     Args:
         unit_id: 机组ID（可选），查询特定机组下的所有告警
-        tag_name: 测点名称（可选），用于模糊匹配
-        tag_source_name: 测点来源名称（可选）
+        tag_code: 测点编码（可选）
+        tag_source_name: 测点源标签点名（可选）
         start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
         end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
         asset_number: 设备编号（可选）
         data_type: 数据类型（可选），如 "告警"、"缺陷" 等
-        current_status_name: 当前状态名称（可选），如 "待处理"、"处理中"、"已关闭"
+        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
         tag_id: 测点ID（可选），精确查询某个测点的告警
         monitor_point_id: 监测点ID（可选）
         closed: 是否已关闭（可选，默认false），true表示查询已关闭的告警
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
-    if tag_name: payload["tagName"] = tag_name
+    if tag_name: payload["tagName"] = tag_code
     if tag_source_name: payload["tagSourceName"] = tag_source_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
