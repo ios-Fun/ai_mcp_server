@@ -328,7 +328,7 @@ def unit_device_rag(tag_name: str) -> str:
     """
     url = f"{server_url}/device/rag"
     try:
-        logger.info(f"POST 请求发送至: {url}, 参数: {"tagName": %s}",tag_name)
+        logger.info(f"POST 请求发送至: {url}, 参数: tagName: {tag_name}")
         resp = requests.post(url, json={"tagName": tag_name})
         resp.raise_for_status()
         return resp.text
@@ -576,7 +576,7 @@ def get_tag_values(
         src_tag_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        type:[str] = "RealTimeData",
+        type: str = "RealTimeData",
 ) -> str:
     """
     测点历史数据查询工具。
