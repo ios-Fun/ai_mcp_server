@@ -322,14 +322,13 @@ def unit_tags_realtime(incident_ids: List[int]) -> str:
 def unit_device_rag(tag_name: str) -> str:
     """
     RAG 知识检索。根据测点名称检索相关知识，返回历史知识和处理建议。
-
     Args:
-        tag_name: 测点名称，多个用逗号分隔，内容精简在 50 字以内
+        tag_name: 测点名称，多个用逗号分隔
     """
     url = f"{server_url}/device/rag"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: tagName: {tag_name}")
-        resp = requests.post(url, json={"tagName": tag_name})
+        resp = requests.post(url, params={"tagName": tag_name})
         resp.raise_for_status()
         return resp.text
     except requests.exceptions.HTTPError as e:
