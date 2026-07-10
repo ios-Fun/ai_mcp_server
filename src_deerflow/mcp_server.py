@@ -482,7 +482,6 @@ def search_tags(
         tag_code: Optional[str] = None,
         src_tag_name: Optional[str] = None,
         name: Optional[str] = None,
-        interval: Optional[int] = 3600
 ) -> str:
     """
     测点信息查询工具。
@@ -492,14 +491,12 @@ def search_tags(
 
     注意: 精确查询的三个参数(tag_id/tag_code/src_tag_name)只需填写一个即可,如果同时提供多个,优先级为: tag_id > tag_code > src_tag_name
     如果使用模糊查询(name),则不能同时使用精确查询参数。
-    默认查询时间间隔为3600s，也就是1小时，可根据时间段长短设置大的时间间隔返回数据避免过度使用token
 
     Args:
         tag_id: 测点ID(可选),精确匹配
         tag_code: 测点编码(可选),精确匹配
         src_tag_name: 源标签点名(可选),精确匹配
         name: 测点名称(可选),模糊匹配
-        interval: 测点查询时间间隔
 
     Returns:
         测点信息列表,包含测点ID、名称、编码、源标签点名、单位、描述等信息
@@ -514,8 +511,6 @@ def search_tags(
         payload["srcTagName"] = src_tag_name
     if name:
         payload["name"] = name
-    if interval:
-        payload["interval"] = interval
     if not payload:
         return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name/name)"
 
@@ -581,6 +576,7 @@ def get_tag_values(
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         type: str = "RealTimeData",
+        interval: Optional[int] = 3600
 ) -> str:
     """
     测点历史数据查询工具。
@@ -591,6 +587,7 @@ def get_tag_values(
 
     如果不传时间参数,默认查询最近6小时到现在的数据。
     三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
+    默认查询时间间隔为3600s，也就是1小时，可根据时间段长短设置大的时间间隔返回数据避免过度使用token
 
     Args:
         tag_id: 测点ID(可选),精确匹配
@@ -599,6 +596,7 @@ def get_tag_values(
         start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
         end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
         type: 查询类型(必填),默认为实际值(RealTimeData),可选值: RealTimeData,Estimate,TagSeverity,all
+        interval: 测点查询时间间隔
     Returns:
         测点历史数据列表,包含时间戳、实际值、估计值、严重度等信息
     """
@@ -617,6 +615,8 @@ def get_tag_values(
     if end_time:
         payload["endTime"] = end_time
     payload["type"] = type
+    if interval:
+        payload["interval"] = interval
 
     # 如果没有传时间,默认查询最近6小时
     if not start_time and not end_time:
