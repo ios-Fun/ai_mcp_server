@@ -473,7 +473,7 @@ def get_sub_system_incident_list(
 工具列表:
   - search_tags          : 通过测点ID/编码/源标签点名准确查找或名称模糊查询测点信息
   - get_tag_paths        : 通过测点ID/编码/源标签点名准确查找测点挂载路径
-  - get_tag_values       : 通过测点ID/编码/源标签点名准确查找指定时间段的测点实际值、估计值、严重度
+  - get_tag_values       : 通过测点ID/编码/源标签点名准确查找指定时间段的测点实际值、估计值、严重度,(默认1小时间隔)
 """
 
 @mcp.tool()
@@ -482,6 +482,7 @@ def search_tags(
         tag_code: Optional[str] = None,
         src_tag_name: Optional[str] = None,
         name: Optional[str] = None,
+        interval: Optional[int] = 3600
 ) -> str:
     """
     测点信息查询工具。
@@ -491,12 +492,14 @@ def search_tags(
 
     注意: 精确查询的三个参数(tag_id/tag_code/src_tag_name)只需填写一个即可,如果同时提供多个,优先级为: tag_id > tag_code > src_tag_name
     如果使用模糊查询(name),则不能同时使用精确查询参数。
+    默认查询时间间隔为3600s，也就是1小时，可根据时间段长短设置大的时间间隔返回数据避免过度使用token
 
     Args:
         tag_id: 测点ID(可选),精确匹配
         tag_code: 测点编码(可选),精确匹配
         src_tag_name: 源标签点名(可选),精确匹配
         name: 测点名称(可选),模糊匹配
+        interval: 测点查询时间间隔
 
     Returns:
         测点信息列表,包含测点ID、名称、编码、源标签点名、单位、描述等信息
@@ -511,6 +514,8 @@ def search_tags(
         payload["srcTagName"] = src_tag_name
     if name:
         payload["name"] = name
+    if interval:
+        payload["interval"] = interval
     if not payload:
         return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name/name)"
 
