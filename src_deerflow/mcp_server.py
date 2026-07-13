@@ -110,7 +110,7 @@ def cg_deviceRag(cached_defectIds: list, thread_id: str = "") -> str:
         
         
 @mcp.tool()
-def deviceRag(ragInfo: str, thread_id: str = "") -> str:
+def deviceRag_V1(ragInfo: str, thread_id: str = "") -> str:
     """查询rag信息
 
     :param ragInfo: 待检索关键信息
@@ -120,11 +120,12 @@ def deviceRag(ragInfo: str, thread_id: str = "") -> str:
     """
     logging.info(f"deviceRag: {ragInfo}")
     java_url = os.getenv("SERVER_URL")+"/device/rag"
-
-    response = requests.post(url=java_url, json=ragInfo, headers={"Content-Type": "application/json"})
+    params = {}
+    params["tagName"] = ragInfo
+    response = requests.post(url=java_url, json=params, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
-        logging.info(f"cg_deviceRag response: {response.text}")
+        logging.info(f"deviceRag_V1 response: {response.text}")
         return response.text
     else:
         return "发送失败"
