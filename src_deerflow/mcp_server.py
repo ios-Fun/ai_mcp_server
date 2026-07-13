@@ -637,6 +637,36 @@ def get_tag_values(
     except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
 
+#============工具相关MCP==================================================================
+
+@mcp.tool()
+def match_for_best(match_string: str) -> str:
+    """
+    实例模糊匹配工具。
+    根据的“用户输入的完整问题”，从所有实例中模糊匹配出相似度最高的前10个实例。
+    匹配逻辑基于混合杰卡德相似度（字符级 + 词级 + 基础杰卡德），对实例名称进行相似度计算。
+
+    使用场景：当用户输入的设备/测点/实例名称不够精确时，可先调用此工具将用户发送的整个语句传入进行模糊匹配，
+    获取最可能的实例列表后再进行后续操作。
+
+    Args:
+        match_string: 用于模糊匹配的字符串，如设备名称、测点名称等
+
+    Returns:
+        相似度最高的前10个实例信息列表，每个实例包含 id、name、code、type、similarity 字段
+    """
+    url = f"{server_url}/common/matchForBest"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: matchString={match_string}")
+        resp = requests.post(url, params={"matchString": match_string})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
+
+
 #=========================================================================================
 
 # Create SSE transport
