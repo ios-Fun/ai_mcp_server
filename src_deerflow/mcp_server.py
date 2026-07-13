@@ -122,7 +122,7 @@ def deviceRag_V1(ragInfo: str, thread_id: str = "") -> str:
     java_url = os.getenv("SERVER_URL")+"/device/rag"
     params = {}
     params["tagName"] = ragInfo
-    response = requests.post(url=java_url, json=params, headers={"Content-Type": "application/json"})
+    response = requests.post(url=java_url, params=params, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"deviceRag_V1 response: {response.text}")
