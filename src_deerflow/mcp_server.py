@@ -5,6 +5,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.routing import Mount, Route
 from starlette.applications import Starlette
+from starlette.responses import Response
 from typing import Optional, List, Dict, Any
 import clickhouse_connect
 import asyncio
@@ -38,7 +39,7 @@ def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
         字符串
     """
     logging.info(f"cg_device_healthy: {orginal}")
-    
+
     # rasa
     rasa_url = os.getenv("RASA_URL")
     rasa_data = {
@@ -56,7 +57,7 @@ def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
     
     second_custom = data[1]["custom"]
     logging.info(f"second_custom: {second_custom}")
-    
+
     java_url = os.getenv("SERVER_URL")+"/device/healthy/v3"
     logging.info(f"java_url: {java_url}")
     response = requests.post(url=java_url, json=second_custom, headers={"Content-Type": "application/json"})
@@ -681,6 +682,7 @@ async def handle_sse(request):
         await mcp._mcp_server.run(
             streams[0], streams[1], mcp._mcp_server.create_initialization_options()
         )
+        return Response()
 
 # Create Starlette routes
 routes = [
