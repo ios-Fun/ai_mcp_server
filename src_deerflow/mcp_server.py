@@ -645,17 +645,14 @@ def get_tag_values(
 def match_for_best(match_string: str) -> str:
     """
     实例模糊匹配工具。
-    根据的“用户输入的完整问题”，从所有实例中模糊匹配出相似度最高的前10个实例。
+    根据的“用户输入的完整问题”，从所有实例中模糊匹配出相似度最高的实例。
     匹配逻辑基于混合杰卡德相似度（字符级 + 词级 + 基础杰卡德），对实例名称进行相似度计算。
-
     使用场景：当用户输入的语句不能精确辨识实体时，可先调用此工具将用户发送的整个语句传入进行模糊匹配，
     获取最可能的实例列表后再进行后续操作。
-
     Args:
         match_string: 用于模糊匹配的字符串，如设备名称、测点名称等
-
     Returns:
-        相似度最高的前10个实例信息列表，每个实例包含 id、name、code、type、similarity 字段
+        相似度最高的实例信息列表，相似度值最高的有多个，就返回多个，每个实例包含 id、name、code、type、similarity 字段
     """
     url = f"{server_url}/common/matchForBest"
     try:
