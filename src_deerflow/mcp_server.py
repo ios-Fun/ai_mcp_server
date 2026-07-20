@@ -244,8 +244,6 @@ def unit_select_incidents(
         unit_name: str,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        num: Optional[str] = None,
-        time_unit: Optional[str] = None,
         closed: Optional[bool] = None,
 ) -> str:
     """
@@ -254,17 +252,13 @@ def unit_select_incidents(
 
     Args:
         unit_name: 机组名称（必填），如 "京燃"
-        start_time: 开始时间（可选）
-        end_time: 结束时间（可选）
-        num: 时间跨度数值（可选）
-        time_unit: 时间单位（可选），day/week/month/year
+        start_time: 开始时间（格式:YYYY-MM-DDT00:00:00Z）
+        end_time: 结束时间（格式:YYYY-MM-DDT00:00:00Z）
         closed: 是否已关闭（可选）
     """
     payload = {"unitName": unit_name}
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
-    if num: payload["num"] = num
-    if time_unit: payload["timeUnit"] = time_unit
     if closed is not None: payload["closed"] = closed
 
     url = f"{server_url}/unit/selectIncidents"
@@ -321,22 +315,30 @@ def unit_tags_realtime(incident_ids: List[int]) -> str:
         return f"错误：请求异常: {str(e)}"
 
 @mcp.tool()
-def unit_device_rag(tag_name: str) -> str:
+def unit_device_rag(tag_names: list[str]) -> str:
     """
-    RAG 知识检索。根据测点名称检索相关知识，返回历史知识和处理建议。
+    RAG 知识检索。根据测点名称列表批量检索相关知识，返回历史知识和处理建议。
     Args:
-        tag_name: 测点名称，多个用逗号分隔
+        tag_names: 测点名称列表，每个元素为一个测点名称
     """
     url = f"{server_url}/device/rag"
-    try:
-        logger.info(f"POST 请求发送至: {url}, 参数: tagName: {tag_name}")
-        resp = requests.post(url, params={"tagName": tag_name})
-        resp.raise_for_status()
-        return resp.text
-    except requests.exceptions.HTTPError as e:
-        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
-    except requests.exceptions.RequestException as e:
-        return f"错误：请求异常: {str(e)}"
+    results = []
+    for tag_name in tag_names:
+        tag_name = tag_name.strip()
+        if not tag_name:
+            continue
+        try:
+            logger.info(f"POST 请求发送至: {url}, 参数: tagName: {tag_name}")
+            resp = requests.post(url, params={"tagName": tag_name})
+            resp.raise_for_status()
+            results.append(f"### 测点: {tag_name}\n{resp.text}")
+        except requests.exceptions.HTTPError as e:
+            results.append(f"### 测点: {tag_name}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+        except requests.exceptions.RequestException as e:
+            results.append(f"### 测点: {tag_name}\n错误：请求异常: {str(e)}")
+    if not results:
+        return "未获取到任何测点的RAG知识，请检查输入的测点名称列表。"
+    return "\n\n---\n\n".join(results)
 
 @mcp.tool()
 def get_alarm_list(
