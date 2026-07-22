@@ -276,68 +276,72 @@ def unit_select_incidents(
 def unit_graph_show(incident_ids: List[int]) -> str:
     """
     获取故障模式推导图（故障模式 → 特征 → 测点的层级关系）。
-
     Args:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    payload = [{"incidentId": iid} for iid in incident_ids]
-
     url = f"{server_url}/device/graph/show"
-    try:
-        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-        resp.raise_for_status()
-        return resp.text
-    except requests.exceptions.HTTPError as e:
-        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
-    except requests.exceptions.RequestException as e:
-        return f"错误：请求异常: {str(e)}"
+    results = []
+    for iid in incident_ids:
+        payload = [{"incidentId": iid}]
+        try:
+            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+            resp.raise_for_status()
+            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
+        except requests.exceptions.HTTPError as e:
+            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+        except requests.exceptions.RequestException as e:
+            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
+    if not results:
+        return "未获取到任何诊断单的故障模式推导图，请检查输入的诊断单ID列表。"
+    return "\n\n---\n\n".join(results)
 
 @mcp.tool()
 def unit_tags_realtime(incident_ids: List[int]) -> str:
     """
-    获取测点实时值（含测点名称、单位、严重度等级、实际测点数据）。
-
+    获取诊断单发生时刻涉及到的点前半小时内的数据（含测点名称、单位、严重度等级、实际测点数据）。
     Args:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    payload = [{"incidentId": iid} for iid in incident_ids]
-
     url = f"{server_url}/device/tagsRealTime"
-    try:
-        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-        resp.raise_for_status()
-        return resp.text
-    except requests.exceptions.HTTPError as e:
-        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
-    except requests.exceptions.RequestException as e:
-        return f"错误：请求异常: {str(e)}"
+    results = []
+    for iid in incident_ids:
+        payload = [{"incidentId": iid}]
+        try:
+            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+            resp.raise_for_status()
+            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
+        except requests.exceptions.HTTPError as e:
+            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+        except requests.exceptions.RequestException as e:
+            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
+    if not results:
+        return "未获取到任何诊断单的测点实时数据，请检查输入的诊断单ID列表。"
+    return "\n\n---\n\n".join(results)
 
 @mcp.tool()
-def unit_device_rag(tag_names: list[str]) -> str:
+def unit_device_rag(incident_ids: List[int]) -> str:
     """
-    RAG 知识检索。根据测点名称列表批量检索相关知识，返回历史知识和处理建议。
+    RAG 知识检索。根据诊断单ID列表检索相关知识，返回历史知识和处理建议。
     Args:
-        tag_names: 测点名称列表，每个元素为一个测点名称
+        incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    url = f"{server_url}/device/rag"
+    url = f"{server_url}/device/rag/v2"
     results = []
-    for tag_name in tag_names:
-        tag_name = tag_name.strip()
-        if not tag_name:
-            continue
+    for iid in incident_ids:
+        payload = [{"incidentId": iid}]
         try:
-            logger.info(f"POST 请求发送至: {url}, 参数: tagName: {tag_name}")
-            resp = requests.post(url, params={"tagName": tag_name})
+            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
             resp.raise_for_status()
-            results.append(f"### 测点: {tag_name}\n{resp.text}")
+            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
         except requests.exceptions.HTTPError as e:
-            results.append(f"### 测点: {tag_name}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
         except requests.exceptions.RequestException as e:
-            results.append(f"### 测点: {tag_name}\n错误：请求异常: {str(e)}")
+            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
     if not results:
-        return "未获取到任何测点的RAG知识，请检查输入的测点名称列表。"
+        return "未获取到任何诊断单的RAG知识，请检查输入的诊断单ID列表。"
     return "\n\n---\n\n".join(results)
 
 @mcp.tool()
@@ -404,15 +408,15 @@ def get_system_incident_list(
         closed: Optional[bool] = None,
 ) -> str:
     """
-    查询系统诊断单列表。支持多维度筛选系统级诊断单信息。
+    查询系统评估单列表。支持多维度筛选系统级评估单信息。
 
     Args:
-        unit_id: 机组ID（可选），查询特定机组下的系统诊断单
-        system_id: 系统ID（可选），查询特定系统的诊断单
+        unit_id: 机组ID（可选），查询特定机组下的系统评估单
+        system_id: 系统ID（可选），查询特定系统的评估单
         start_time: 开始时间（可选），与 end_time 配合使用
         end_time: 结束时间（可选），与 start_time 配合使用
         current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
-        closed: 是否已关闭，true表示查询已关闭的诊断单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
+        closed: 是否已关闭，true表示查询已关闭的评估单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -443,15 +447,15 @@ def get_sub_system_incident_list(
         closed: Optional[bool] = None,
 ) -> str:
     """
-    查询子系统诊断单列表。支持多维度筛选子系统级诊断单信息。
+    查询子系统评估单列表。支持多维度筛选子系统级评估单信息。
 
     Args:
-        unit_id: 机组ID（可选），查询特定机组下的子系统诊断单
-        sub_system_id: 子系统ID（可选），查询特定子系统的诊断单
+        unit_id: 机组ID（可选），查询特定机组下的子系统评估单
+        sub_system_id: 子系统ID（可选），查询特定子系统的评估单
         start_time: 开始时间（可选），与 end_time 配合使用
         end_time: 结束时间（可选），与 start_time 配合使用
         current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
-        closed: 是否已关闭，true表示查询已关闭的诊断单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
+        closed: 是否已关闭，true表示查询已关闭的评估单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
