@@ -372,7 +372,7 @@ def get_alarm_list(
         current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
         tag_id: 测点ID（可选），精确查询某个测点的告警
         monitor_point_id: 监测点ID（可选）
-        closed: 是否已关闭，true表示查询已关闭的告警，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
+        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -416,7 +416,7 @@ def get_system_incident_list(
         start_time: 开始时间（可选），与 end_time 配合使用
         end_time: 结束时间（可选），与 start_time 配合使用
         current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
-        closed: 是否已关闭，true表示查询已关闭的评估单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
+        closed: 是否已关闭（可选），true表示查询已关闭的评估单，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -455,7 +455,7 @@ def get_sub_system_incident_list(
         start_time: 开始时间（可选），与 end_time 配合使用
         end_time: 结束时间（可选），与 start_time 配合使用
         current_status: 当前状态（可选），如 "待处理"、"处理中"、"已关闭"
-        closed: 是否已关闭，true表示查询已关闭的评估单，false表示未关闭的，不加该参数为全部（可选，用户没指定建议false）
+        closed: 是否已关闭（可选），true表示查询已关闭的评估单，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
