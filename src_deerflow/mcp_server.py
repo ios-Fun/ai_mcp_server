@@ -14,6 +14,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import logging
+import re
 
 load_dotenv()
 
@@ -281,13 +282,18 @@ def unit_graph_show(incident_ids: List[int]) -> str:
     """
     url = f"{server_url}/device/graph/show"
     results = []
+    _realtime_pattern = re.compile(
+        r'^[ \t]*(?://\s*realTimeValue.*|Double\s+tag_\S+\s*=\s*realTimeValue\([^)]*\);)[ \t]*\n?',
+        re.MULTILINE
+    )
     for iid in incident_ids:
         payload = [{"incidentId": iid}]
         try:
             logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
             resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
             resp.raise_for_status()
-            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
+            cleaned_text = _realtime_pattern.sub('', resp.text)
+            results.append(f"# 诊断单ID: {iid}\n{cleaned_text}")
         except requests.exceptions.HTTPError as e:
             results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
         except requests.exceptions.RequestException as e:
@@ -343,6 +349,30 @@ def unit_device_rag(incident_ids: List[int]) -> str:
     if not results:
         return "未获取到任何诊断单的RAG知识，请检查输入的诊断单ID列表。"
     return "\n\n---\n\n".join(results)
+
+@mcp.tool()
+def unit_mount_path(
+        unit_id: int,
+        incident_ids: List[int],
+) -> str:
+    """
+    获取机组下诊断单关联节点的层级路径树。
+    根据机组ID和诊断单ID列表，查询各诊断单对应节点的完整层级路径（从机组到节点），
+    Args:
+        unit_id: 机组ID（必填）
+        incident_ids: 诊断单ID列表（必填），如 [123, 456]
+    """
+    url = f"{server_url}/unit/getPathUnderUnit"
+    payload = {"unitId": unit_id, "incidentIds": incident_ids}
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 
 @mcp.tool()
 def get_alarm_list(
