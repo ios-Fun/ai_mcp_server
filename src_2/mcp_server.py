@@ -5,7 +5,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.routing import Mount, Route
 from starlette.applications import Starlette
-import clickhouse_connect
+
 import asyncio
 import json
 import os

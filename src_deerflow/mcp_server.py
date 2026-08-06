@@ -7,7 +7,8 @@ from starlette.routing import Mount, Route
 from starlette.applications import Starlette
 from starlette.responses import Response
 from typing import Optional, List, Dict, Any
-import clickhouse_connect
+from src_deerflow.redis_client import memoryRedis
+# import clickhouse_connect
 import asyncio
 import json
 import os
@@ -30,9 +31,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Define an MCP tool to execute ClickHouse queries
+
+# 设备的健康状态评估 -- cg_device_healthy
 @mcp.tool()
 def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
-    """设备的健康状态评估
+    """
 
     :param orginal: 原文
     :param thread_id: 线程id
@@ -69,15 +72,23 @@ def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
     else:
         return "发送失败"
 
+# 显示故障模式 -- cg_graphshow
 @mcp.tool()
-def cg_graphshow(cached_defectIds: list, thread_id: str = "") -> str:
-    """显示故障模式
+def cg_graphshow( thread_id: str = "") -> str:
+    """
 
-    :param cached_defectIds: 诊断单的信息
     :param thread_id: 线程id
     Returns:
         字符串
     """
+
+    cached_defectIds: list
+    redis_key = f"{thread_id}_cached_defectIds"
+    if memoryRedis.has_key(redis_key):
+        value = memoryRedis.get_cache(redis_key)
+        cached_defectIds = value
+        logger.info(f"Executing tool key: {redis_key}, value: {value}")
+
     logging.info(f"cg_graphshow: {cached_defectIds}")
     # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
     java_url = os.getenv("SERVER_URL")+"/device/graph/show"
@@ -90,17 +101,24 @@ def cg_graphshow(cached_defectIds: list, thread_id: str = "") -> str:
     else:
         return "发送失败"
 
+# 查询rag信息 -- cg_deviceRag
 @mcp.tool()
-def cg_deviceRag(cached_defectIds: list, thread_id: str = "") -> str:
-    """查询rag信息
+def cg_deviceRag( thread_id: str = "") -> str:
+    """
 
-    :param cached_defectIds: 诊断单的信息
     :param thread_id: 线程id    
     Returns:
         字符串
     """
+    cached_defectIds: list
+    redis_key = f"{thread_id}_cached_defectIds"
+    if memoryRedis.has_key(redis_key):
+        value = memoryRedis.get_cache(redis_key)
+        cached_defectIds = value
+        logger.info(f"Executing tool key: {redis_key}, value: {value}")
     logging.info(f"cg_deviceRag: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/rag/v2"
+    
 
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
@@ -110,17 +128,18 @@ def cg_deviceRag(cached_defectIds: list, thread_id: str = "") -> str:
     else:
         return "发送失败"
         
-        
+
+# 查询rag信息 -- deviceRag_V1
 @mcp.tool()
 def deviceRag_V1(ragInfo: str, thread_id: str = "") -> str:
-    """查询rag信息
+    """
 
     :param ragInfo: 待检索关键信息
     :param thread_id: 线程id    
     Returns:
         字符串
     """
-    logging.info(f"deviceRag: {ragInfo}")
+    logging.info(f"deviceRag_v1: {ragInfo}")
     java_url = os.getenv("SERVER_URL")+"/device/rag"
     params = {}
     params["tagName"] = ragInfo
@@ -132,15 +151,21 @@ def deviceRag_V1(ragInfo: str, thread_id: str = "") -> str:
     else:
         return "发送失败"
 
+# 显示测点实际值-- cg_tagsRealtimeValues
 @mcp.tool()
-def cg_tagsRealtimeValues(cached_defectIds: list, thread_id: str = "") -> str:
-    """显示测点实际值
+def cg_tagsRealtimeValues( thread_id: str = "") -> str:
+    """
 
-    :param cached_defectIds: 诊断单的信息
     :param thread_id: 线程id    
     Returns:
         字符串
     """
+    cached_defectIds: list
+    redis_key = f"{thread_id}_cached_defectIds"
+    if memoryRedis.has_key(redis_key):
+        value = memoryRedis.get_cache(redis_key)
+        cached_defectIds = value
+        logger.info(f"Executing tool key: {redis_key}, value: {value}")
     logging.info(f"cg_tagsRealtimeValues: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/tagsRealTime"
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
@@ -151,15 +176,21 @@ def cg_tagsRealtimeValues(cached_defectIds: list, thread_id: str = "") -> str:
     else:
         return "发送失败"
 
+# 获取测点信息 -- cg_tagsInfoList
 @mcp.tool()
-def cg_tagsInfoList(cached_defectIds: list, thread_id: str = "") -> str:
-    """获取测点信息
+def cg_tagsInfoList( thread_id: str = "") -> str:
+    """
 
-    :param cached_defectIds: 诊断单的信息
     :param thread_id: 线程id    
     Returns:
         字典信息
     """
+    cached_defectIds: list
+    redis_key = f"{thread_id}_cached_defectIds"
+    if memoryRedis.has_key(redis_key):
+        value = memoryRedis.get_cache(redis_key)
+        cached_defectIds = value
+        logger.info(f"Executing tool key: {redis_key}, value: {value}")
     logging.info(f"cg_tagsInfoList: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/tagsInfoList"
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
@@ -170,24 +201,86 @@ def cg_tagsInfoList(cached_defectIds: list, thread_id: str = "") -> str:
     else:
         return "发送失败"
 
-@mcp.tool()
-def cg_tagTrend(cached_TagsTrendPara: list, thread_id: str = "") -> str:
-    """显示测点实际值
-
-    :param cached_TagsTrendPara: 测点的信息
-    :param thread_id: 线程id    
+# @mcp.tool()
+def cg_tagTrend(
+        orginal: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        thread_id: str = "") -> str:
+    """测点的趋势信息
+    Args:
+        orginal: 原文
+        start_time: 开始时间（可选），如 "2024-01-01T00:00:00+08:00"
+        end_time: 结束时间（可选），如 "2024-01-07T23:59:59+08:00"
+        thread_id: 线程id
     Returns:
         字符串
     """
-    logging.info(f"cg_tagTrend: {cached_TagsTrendPara}")
-    java_url = os.getenv("SERVER_URL")+"/device/tagsTrend"
-    response = requests.post(url=java_url, json=cached_TagsTrendPara, headers={"Content-Type": "application/json"})
-    logging.info(f"response.status_code: {response.status_code}")
-    if response.status_code == 200:
-        logging.info(f"cg_tagTrend response: {response.text}")
-        return response.text
+    logging.info(f"cg_tagTrend: {orginal}, {start_time}, {end_time}")
+    
+    # 如果匹配到测点，就用测点的
+    code = None
+    try:
+        match_result = _match_for_best_impl(orginal)
+        logging.info(f"match_result: {match_result}")
+        logging.info(f"match_result type: {type(match_result)}")
+        if isinstance(match_result, str):
+            match_result = json.loads(match_result)
+        code = match_result["data"][0]["code"]
+        logging.info(f"name: {code}")
+    except Exception as e:
+        logger.info(f"error: {str(e)}")
+    
+    if code is not None:
+        payload = {}
+        payload["tagName"] = code
+        # payload["srcTagName"] = code
+        payload["type"] = 'RealTimeData'
+
+        if start_time:
+            payload["startTime"] = start_time
+        if end_time:
+            payload["endTime"] = end_time
+
+        # 如果没有传时间,默认查询最近6小时
+        if not start_time and not end_time:
+            from datetime import datetime, timedelta, timezone
+            now = datetime.now(timezone.utc)
+            six_hours_ago = now - timedelta(hours=6)
+            payload["startTime"] = six_hours_ago.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+            payload["endTime"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+        url = f"{server_url}/tag/tagValues"
+        try:
+            logger.info(f"cg_tagTrend POST 请求发送至: {url}, 参数: {payload}")
+            resp = requests.post(url, params=payload)
+            # resp.raise_for_status()
+            # logging.info(f"cg_tagTrend response: {response.text}")
+            # return response.text
+            if resp.status_code == 200:
+                logging.info(f"cg_tagTrend response: {resp.text}")
+                return resp.text
+            else:
+                return "发送失败"
+        except requests.exceptions.HTTPError as e:
+            logger.info(f"错误：后端接口请求失败，状态码：{e.response.status_code}")
+            return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+        except Exception as e:
+            logger.info(f"错误：请求异常: {str(e)}")
+            return f"错误：请求异常: {str(e)}"
     else:
-        return "发送失败"
+        # 如果没有匹配到测点，就认为是追问或多意图
+        logger.info("name is null")
+        java_url = os.getenv("SERVER_URL")+"/device/tagsTrend"
+        response = requests.post(url=java_url, json=match_result, headers={"Content-Type": "application/json"})
+        logging.info(f"response.status_code: {response.status_code}")
+        if response.status_code == 200:
+            logging.info(f"cg_tagTrend response: {response.text}")
+            return response.text
+        else:
+            return "发送失败"
+
+    
 
 #============机组相关MCP=================================================================
 """
@@ -199,7 +292,7 @@ def cg_tagTrend(cached_TagsTrendPara: list, thread_id: str = "") -> str:
   - device_rag         : RAG 知识检索
 """
 
-@mcp.tool()
+# @mcp.tool()
 def unit_healthy(
         unit_name: str,
         start_time: Optional[str] = None,
@@ -608,16 +701,18 @@ def get_tag_paths(
 
 @mcp.tool()
 def get_tag_values(
+        orginal: str,
         tag_id: Optional[int] = None,
         tag_code: Optional[str] = None,
         src_tag_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         type: str = "RealTimeData",
-        interval: Optional[int] = 3600
-) -> str:
+        interval: Optional[int] = 3600,
+        thread_id: str = ""
+) -> None | str | dict[Any, Any]:
     """
-    测点历史数据查询工具。
+    测点历史数据查询工具，查趋势。
     通过测点ID、编码或源标签点名精确查找指定时间段内的测点数据type,包括:
     - 实际值(RealTimeData)
     - 估计值(Estimate)
@@ -635,8 +730,102 @@ def get_tag_values(
         end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
         type: 查询类型(必填),默认为实际值(RealTimeData),可选值: RealTimeData,Estimate,TagSeverity,all
         interval: 测点查询时间间隔
+        thread_id: 线程id
     Returns:
         测点历史数据列表,包含时间戳、实际值、估计值、严重度等信息
+    """
+    logger.info(f"get_tag_values: {orginal}, {tag_id}, {tag_code}, {src_tag_name}, {start_time}, {end_time}, {type}, {interval}, {thread_id}")
+    # 从原文提取下，看有没有测点如果匹配到测点，就用测点的
+    code = None
+    try:
+        match_result = _match_for_best_impl(orginal)
+        logging.info(f"match_result: {match_result}")
+        logging.info(f"match_result type: {type(match_result)}")
+        if isinstance(match_result, str):
+            match_result = json.loads(match_result)
+        code = match_result["data"][0]["code"]
+        logging.info(f"name: {code}")
+    except Exception as e:
+        logger.info(f"error: {str(e)}")
+    if code is not None:
+        # 从redis获取 cached_TagsTrendPara
+        logger.info("redis: 1")
+        cached_defectIds: list
+        redis_key = f"{thread_id}_cached_defectIds"
+        if memoryRedis.has_key(redis_key):
+            value = memoryRedis.get_cache(redis_key)
+            cached_defectIds = value
+            logger.info(f"Executing tool key: {redis_key}, value: {value}")
+    else:
+        payload = {}
+        if tag_id is not None:
+            payload["tagId"] = tag_id
+        elif tag_code:
+            payload["tagName"] = tag_code
+        elif src_tag_name:
+            payload["srcTagName"] = src_tag_name
+        else:
+            return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name)"
+
+        if start_time:
+            payload["startTime"] = start_time
+        if end_time:
+            payload["endTime"] = end_time
+        payload["type"] = type
+        if interval:
+            payload["interval"] = interval
+
+        # 如果没有传时间,默认查询最近6小时
+        if not start_time and not end_time:
+            from datetime import datetime, timedelta, timezone
+            now = datetime.now(timezone.utc)
+            six_hours_ago = now - timedelta(hours=6)
+            payload["startTime"] = six_hours_ago.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+            payload["endTime"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+        url = f"{server_url}/tag/tagValues"
+        try:
+            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+            resp = requests.post(url, params=payload)
+            resp.raise_for_status()
+            trend_result = resp.text
+            all_msg = {}
+            all_msg["llmMsg"] = f"{tag_code}, {src_tag_name} 趋势查询成功"
+            all_msg["result_trend"] = trend_result
+            return all_msg
+        except requests.exceptions.HTTPError as e:
+            return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+        except requests.exceptions.RequestException as e:
+            return f"错误：请求异常: {str(e)}"
+#============查询测点某时刻的值=============================================================
+@mcp.tool()
+def get_tag_value_attime(
+        tag_id: Optional[int] = None,
+        tag_code: Optional[str] = None,
+        src_tag_name: Optional[str] = None,
+        time: Optional[str] = None,
+        type: str = "RealTimeData",
+) -> str:
+    """
+    查询测点某单一时刻的值
+    通过测点ID、编码或源标签点名精确查找指定时间段内的测点数据type,包括:
+    - 实际值(RealTimeData)
+    - 估计值(Estimate)
+    - 严重度(TagSeverity)
+
+    如果不传时间参数,默认查询最近6小时到现在的数据。
+    三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
+    默认查询时间间隔为3600s，也就是1小时，可根据时间段长短设置大的时间间隔返回数据避免过度使用token
+
+    Args:
+        tag_id: 测点ID(可选),精确匹配
+        tag_code: 测点编码(可选),精确匹配
+        src_tag_name: 源标签点名(可选),精确匹配
+        time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
+        type: 查询类型(必填),默认为实际值(RealTimeData),可选值: RealTimeData,Estimate,TagSeverity,all
+        thread_id: 线程id
+    Returns:
+        测点某时刻的值
     """
     payload = {}
     if tag_id is not None:
@@ -648,31 +837,24 @@ def get_tag_values(
     else:
         return "错误: 请至少提供一个查询参数(tag_id/tag_code/src_tag_name)"
 
-    if start_time:
-        payload["startTime"] = start_time
-    if end_time:
-        payload["endTime"] = end_time
+    if time:
+        payload["time"] = time
     payload["type"] = type
-    if interval:
-        payload["interval"] = interval
 
-    # 如果没有传时间,默认查询最近6小时
-    if not start_time and not end_time:
-        from datetime import datetime, timedelta, timezone
-        now = datetime.now(timezone.utc)
-        six_hours_ago = now - timedelta(hours=6)
-        payload["startTime"] = six_hours_ago.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-        payload["endTime"] = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    # 如果没有传时间,就最新时刻的一个值
 
-    url = f"{server_url}/tag/tagValues"
+    url = f"{server_url}/tag/tagValue"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
         resp = requests.post(url, params=payload)
         resp.raise_for_status()
+        logger.info(f"get_tag_value resp: {resp.text}")
         return resp.text
     except requests.exceptions.HTTPError as e:
+        logger.info(f"get_tag_value error 状态码：{e.response.status_code}")
         return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
     except requests.exceptions.RequestException as e:
+        logger.info(f"get_tag_value error 请求异常: {str(e)}")
         return f"错误：请求异常: {str(e)}"
 
 #============工具相关MCP==================================================================
@@ -690,17 +872,23 @@ def match_for_best(match_string: str) -> str:
     Returns:
         相似度最高的实例信息列表，相似度值最高的有多个，就返回多个，每个实例包含 id、name、code、type、similarity 字段
     """
+    return _match_for_best_impl(match_string)
+
+def _match_for_best_impl(match_string: str) -> str:
+    """底层公共方法：实例模糊匹配，可供本地代码直接调用"""
     url = f"{server_url}/common/matchForBest"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: matchString={match_string}")
         resp = requests.post(url, params={"matchString": match_string})
         resp.raise_for_status()
+        logger.info(f"result: {resp.text}")
         return resp.text
     except requests.exceptions.HTTPError as e:
+        logger.info(f"错误：后端接口请求失败，状态码：{e.response.status_code}")
         return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
     except requests.exceptions.RequestException as e:
+        logger.info(f"错误：请求异常: {str(e)}")
         return f"错误：请求异常: {str(e)}"
-
 
 #=========================================================================================
 

@@ -1,5 +1,4 @@
 mcp
-clickhouse-connect
 fastapi
 sse-starlette
 uvicorn
@@ -7,3 +6,5 @@ python-dotenv
 starlette
 requests
 flask
+fastmcp
+redis
