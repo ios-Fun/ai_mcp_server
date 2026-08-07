@@ -426,7 +426,7 @@ def unit_device_rag(incident_ids: List[int]) -> str:
     Args:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    url = f"{server_url}/device/rag/v2"
+    url = f"{server_url}/device/rag/v3"
     results = []
     for iid in incident_ids:
         payload = [{"incidentId": iid}]
@@ -511,6 +511,60 @@ def get_alarm_list(
     if closed is not None: payload["closed"] = closed
 
     url = f"{server_url}/unit/getAlarmList"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def unit_alarm_list_statistics(
+        unit_id: Optional[int] = None,
+        tag_code: Optional[str] = None,
+        tag_source_name: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        asset_number: Optional[int] = None,
+        data_type: Optional[str] = None,
+        current_status_name: Optional[str] = None,
+        tag_id: Optional[int] = None,
+        monitor_point_id: Optional[int] = None,
+        closed: Optional[bool] = None,
+) -> str:
+    """
+    查询报警单统计内容(与数据趋势无关)。支持多维度筛选告警信息。
+
+    Args:
+        unit_id: 机组ID（可选），查询特定机组下的所有告警
+        tag_code: 测点编码（可选）
+        tag_source_name: 测点源标签点名（可选）
+        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        asset_number: 设备编号（可选）
+        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
+        tag_id: 测点ID（可选），精确查询某个测点的告警
+        monitor_point_id: 监测点ID（可选）
+        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+    """
+    payload = {}
+    if unit_id is not None: payload["unitId"] = unit_id
+    if tag_code: payload["tagName"] = tag_code
+    if tag_source_name: payload["tagSourceName"] = tag_source_name
+    if start_time: payload["startTime"] = start_time
+    if end_time: payload["endTime"] = end_time
+    if asset_number is not None: payload["assetNumber"] = asset_number
+    if data_type: payload["dataType"] = data_type
+    if current_status_name: payload["currentStatusName"] = current_status_name
+    if tag_id is not None: payload["tagId"] = tag_id
+    if monitor_point_id is not None: payload["monitorPointId"] = monitor_point_id
+    if closed is not None: payload["closed"] = closed
+
+    url = f"{server_url}/unit/getAlarmListStatistics"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
@@ -717,6 +771,7 @@ def get_tag_values(
     - 实际值(RealTimeData)
     - 估计值(Estimate)
     - 严重度(TagSeverity)
+    - XX(XX)
 
     如果不传时间参数,默认查询最近6小时到现在的数据。
     三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
@@ -855,6 +910,35 @@ def get_tag_value_attime(
         return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
     except requests.exceptions.RequestException as e:
         logger.info(f"get_tag_value error 请求异常: {str(e)}")
+        return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def get_tags_of_instance(
+    type: Optional[str] = None,
+    parent_name: Optional[str] = None
+)-> str:
+    """
+    获取实体下的测点信息：
+    无参则获取所有测点信息（不建议无参查询）。
+    如果填写parent_name，必须携带type，获取parent_name下的测点信息。
+    Args:
+        type: 实体类型(可选),默认为所有标签,可选只能为值: 设备、子系统、系统
+        parent_name: 实体名称(可选)，与type一起
+    Returns:
+        实体下所有测点信息列表
+    """
+    payload = {}
+    if type:payload["type"] = type
+    if parent_name:payload["parentName"] = parent_name
+    url = f"{server_url}/tag/getAllTags"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
 
 #============工具相关MCP==================================================================
