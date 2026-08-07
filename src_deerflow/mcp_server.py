@@ -8,6 +8,7 @@ from starlette.applications import Starlette
 from starlette.responses import Response
 from typing import Optional, List, Dict, Any
 from src_deerflow.redis_client import memoryRedis
+from concurrent.futures import ThreadPoolExecutor, as_completed
 # import clickhouse_connect
 import asyncio
 import json
@@ -379,21 +380,26 @@ def unit_graph_show(incident_ids: List[int]) -> str:
         r'^[ \t]*(?://\s*realTimeValue.*|Double\s+tag_\S+\s*=\s*realTimeValue\([^)]*\);)[ \t]*\n?',
         re.MULTILINE
     )
-    for iid in incident_ids:
-        payload = [{"incidentId": iid}]
-        try:
-            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-            resp.raise_for_status()
-            cleaned_text = _realtime_pattern.sub('', resp.text)
-            results.append(f"# 诊断单ID: {iid}\n{cleaned_text}")
-        except requests.exceptions.HTTPError as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
-        except requests.exceptions.RequestException as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
-    if not results:
-        return "未获取到任何诊断单的故障模式推导图，请检查输入的诊断单ID列表。"
-    return "\n\n---\n\n".join(results)
+    # for iid in incident_ids:
+    #     payload = [{"incidentId": iid}]
+    #     try:
+    #         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+    #         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+    #         resp.raise_for_status()
+    #         cleaned_text = _realtime_pattern.sub('', resp.text)
+    #         results.append(f"# 诊断单ID: {iid}\n{cleaned_text}")
+    #     except requests.exceptions.HTTPError as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+    #     except requests.exceptions.RequestException as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
+    # if not results:
+    #     return "未获取到任何诊断单的故障模式推导图，请检查输入的诊断单ID列表。"
+    # return "\n\n---\n\n".join(results)
+    return _batch_post(
+        url,
+        incident_ids,
+        formatter=lambda s: _realtime_pattern.sub("", s)
+    )
 
 @mcp.tool()
 def unit_tags_realtime(incident_ids: List[int]) -> str:
@@ -403,21 +409,22 @@ def unit_tags_realtime(incident_ids: List[int]) -> str:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
     url = f"{server_url}/device/tagsRealTime"
-    results = []
-    for iid in incident_ids:
-        payload = [{"incidentId": iid}]
-        try:
-            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-            resp.raise_for_status()
-            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
-        except requests.exceptions.HTTPError as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
-        except requests.exceptions.RequestException as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
-    if not results:
-        return "未获取到任何诊断单的测点实时数据，请检查输入的诊断单ID列表。"
-    return "\n\n---\n\n".join(results)
+    # results = []
+    # for iid in incident_ids:
+    #     payload = [{"incidentId": iid}]
+    #     try:
+    #         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+    #         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+    #         resp.raise_for_status()
+    #         results.append(f"# 诊断单ID: {iid}\n{resp.text}")
+    #     except requests.exceptions.HTTPError as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+    #     except requests.exceptions.RequestException as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
+    # if not results:
+    #     return "未获取到任何诊断单的测点实时数据，请检查输入的诊断单ID列表。"
+    # return "\n\n---\n\n".join(results)
+    return _batch_post(url, incident_ids)
 
 @mcp.tool()
 def unit_device_rag(incident_ids: List[int]) -> str:
@@ -427,21 +434,22 @@ def unit_device_rag(incident_ids: List[int]) -> str:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
     url = f"{server_url}/device/rag/v3"
-    results = []
-    for iid in incident_ids:
-        payload = [{"incidentId": iid}]
-        try:
-            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-            resp.raise_for_status()
-            results.append(f"# 诊断单ID: {iid}\n{resp.text}")
-        except requests.exceptions.HTTPError as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
-        except requests.exceptions.RequestException as e:
-            results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
-    if not results:
-        return "未获取到任何诊断单的RAG知识，请检查输入的诊断单ID列表。"
-    return "\n\n---\n\n".join(results)
+    # results = []
+    # for iid in incident_ids:
+    #     payload = [{"incidentId": iid}]
+    #     try:
+    #         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+    #         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+    #         resp.raise_for_status()
+    #         results.append(f"# 诊断单ID: {iid}\n{resp.text}")
+    #     except requests.exceptions.HTTPError as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
+    #     except requests.exceptions.RequestException as e:
+    #         results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
+    # if not results:
+    #     return "未获取到任何诊断单的RAG知识，请检查输入的诊断单ID列表。"
+    # return "\n\n---\n\n".join(results)
+    return _batch_post(url, incident_ids)
 
 @mcp.tool()
 def unit_mount_path(
@@ -973,6 +981,42 @@ def _match_for_best_impl(match_string: str) -> str:
     except requests.exceptions.RequestException as e:
         logger.info(f"错误：请求异常: {str(e)}")
         return f"错误：请求异常: {str(e)}"
+
+def _batch_post(
+        url: str,
+        incident_ids: List[int],
+        formatter=None,
+        max_workers=10,
+):
+    results = {}
+    session = requests.Session()
+    def worker(iid):
+        payload = [{"incidentId": iid}]
+        try:
+            logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+            resp = session.post(
+                url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            resp.raise_for_status()
+            text = resp.text
+            if formatter:
+                text = formatter(text)
+            return iid, f"# 诊断单ID: {iid}\n{text}"
+        except requests.exceptions.HTTPError as e:
+            return iid, f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}"
+        except requests.exceptions.RequestException as e:
+            return iid, f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}"
+
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(incident_ids))) as pool:
+        futures = [pool.submit(worker, iid) for iid in incident_ids]
+        for future in as_completed(futures):
+            iid, result = future.result()
+            results[iid] = result
+
+    return "\n\n---\n\n".join(results[i] for i in incident_ids if i in results)
 
 #=========================================================================================
 
