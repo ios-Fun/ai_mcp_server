@@ -342,7 +342,7 @@ def unit_select_incidents(
         closed: Optional[bool] = None,
 ) -> str:
     """
-    查询机组诊断单列表。
+    查询机组下诊断单列表。
     根据机组名模糊匹配机组，返回诊断单信息（含 incidentId 等）。
 
     Args:
@@ -374,7 +374,7 @@ def unit_graph_show(incident_ids: List[int]) -> str:
     Args:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    url = f"{server_url}/device/graph/show"
+    url = f"{server_url}/device/graph/showV2"
     results = []
     _realtime_pattern = re.compile(
         r'^[ \t]*(?://\s*realTimeValue.*|Double\s+tag_\S+\s*=\s*realTimeValue\([^)]*\);)[ \t]*\n?',
@@ -404,11 +404,11 @@ def unit_graph_show(incident_ids: List[int]) -> str:
 @mcp.tool()
 def unit_tags_realtime(incident_ids: List[int]) -> str:
     """
-    获取诊断单发生时刻涉及到的点前半小时内的数据（含测点名称、单位、严重度等级、实际测点数据）。
+    获取诊断单发生时刻涉及到的点前后半小时内的统计数据（含实际值、估计值、严重度、XX数据统计）。
     Args:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
-    url = f"{server_url}/device/tagsRealTime"
+    url = f"{server_url}/device/tagsRealTimeV2"
     # results = []
     # for iid in incident_ids:
     #     payload = [{"incidentId": iid}]
@@ -545,7 +545,7 @@ def unit_alarm_list_statistics(
 ) -> str:
     """
     查询报警单统计内容(与数据趋势无关)。支持多维度筛选告警信息。
-
+    查询报警列表，返回报警类型解释及统计不同报警类型下的测点信息
     Args:
         unit_id: 机组ID（可选），查询特定机组下的所有告警
         tag_code: 测点编码（可选）
