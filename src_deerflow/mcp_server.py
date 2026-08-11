@@ -409,22 +409,17 @@ def unit_tags_realtime(incident_ids: List[int]) -> str:
         incident_ids: 诊断单 ID 列表，如 [123, 456]
     """
     url = f"{server_url}/device/tagsRealTimeV2"
-    # results = []
-    # for iid in incident_ids:
-    #     payload = [{"incidentId": iid}]
-    #     try:
-    #         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-    #         resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-    #         resp.raise_for_status()
-    #         results.append(f"# 诊断单ID: {iid}\n{resp.text}")
-    #     except requests.exceptions.HTTPError as e:
-    #         results.append(f"# 诊断单ID: {iid}\n错误：后端接口请求失败，状态码：{e.response.status_code}")
-    #     except requests.exceptions.RequestException as e:
-    #         results.append(f"# 诊断单ID: {iid}\n错误：请求异常: {str(e)}")
-    # if not results:
-    #     return "未获取到任何诊断单的测点实时数据，请检查输入的诊断单ID列表。"
-    # return "\n\n---\n\n".join(results)
-    return _batch_post(url, incident_ids)
+    if incident_ids is not None: payload = incident_ids
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
+    # return _batch_post(url, incident_ids)
 
 @mcp.tool()
 def unit_device_rag(incident_ids: List[int]) -> str:
@@ -1016,7 +1011,7 @@ def _batch_post(
             iid, result = future.result()
             results[iid] = result
 
-    return "\n\n---\n\n".join(results[i] for i in incident_ids if i in results)
+    return "\n---\n".join(results[i] for i in incident_ids if i in results)
 
 #=========================================================================================
 
