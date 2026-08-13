@@ -946,11 +946,11 @@ def get_tags_of_instance(
 
 @mcp.tool()
 def get_tag_statistic_data(
-        tag_id: int,
-        tag_code: str,
-        src_tag_name: str,
-        start_time,
-        end_time
+        tag_id: Optional[int] = None,
+        tag_code: Optional[str] = None,
+        src_tag_name: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
 ) -> str:
     """
     获取具体某一测点在一段时间内的统计数据，包括实际值、估计值、严重度、XX数量。
