@@ -946,20 +946,20 @@ def get_tags_of_instance(
 
 @mcp.tool()
 def get_tag_statistic_data(
-        tag_id: int,
-        tag_code: str,
-        src_tag_name: str,
-        start_time,
-        end_time
+        tag_id: Optional[int] = None,
+        tag_code: Optional[str] = None,
+        src_tag_name: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
 ) -> str:
     """
     获取具体某一测点在一段时间内的统计数据，包括实际值、估计值、严重度、XX数量。
     Args:
-        tag_id: 测点id,可选
-        tag_code: 测点编码,可选
-        src_tag_name: 测点源标签点名,可选
-        start_time: 查询开始时间
-        end_time: 查询结束时间
+        tag_id: 测点ID(可选),精确匹配
+        tag_code: 测点编码(可选),精确匹配
+        src_tag_name: 源标签点名(可选),精确匹配
+        start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
+        end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
     Returns:
         实体下所有测点统计信息
     """
