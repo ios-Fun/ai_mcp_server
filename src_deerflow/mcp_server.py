@@ -917,23 +917,67 @@ def get_tag_value_attime(
 
 @mcp.tool()
 def get_tags_of_instance(
-    type: Optional[str] = None,
-    parent_name: Optional[str] = None
-)-> str:
+        type: str,
+        parent_name: str
+) -> str:
     """
-    获取实体下的测点信息：
-    无参则获取所有测点信息（不建议无参查询）。
-    如果填写parent_name，必须携带type，获取parent_name下的测点信息。
+    获取实体下的测点信息。
     Args:
-        type: 实体类型(可选),默认为所有标签,可选只能为值: 设备、子系统、系统
-        parent_name: 实体名称(可选)，与type一起
+        type: 实体类型,可选值: 设备、子系统、系统
+        parent_name: 实体名称
     Returns:
         实体下所有测点信息列表
     """
+    if not type or not parent_name:
+        return "参数不得为空：type 和 parent_name 均为必填参数"
     payload = {}
     if type:payload["type"] = type
     if parent_name:payload["parentName"] = parent_name
     url = f"{server_url}/tag/getAllTags"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def get_tag_statistic_data(
+        tag_id: int,
+        tag_code: str,
+        src_tag_name: str,
+        start_time,
+        end_time
+) -> str:
+    """
+    获取具体某一测点在一段时间内的统计数据，包括实际值、估计值、严重度、XX数量。
+    Args:
+        tag_id: 测点id,可选
+        tag_code: 测点编码,可选
+        src_tag_name: 测点源标签点名,可选
+        start_time: 查询开始时间
+        end_time: 查询结束时间
+    Returns:
+        实体下所有测点统计信息
+    """
+    if not (tag_id or tag_code or src_tag_name): return "至少传入一个测点参数！"
+    if not start_time and not end_time:
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
+        six_hours_ago = now - timedelta(hours=6)
+        start_time = six_hours_ago.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        end_time = now.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    payload = {}
+    if tag_id:payload["tagId"] = tag_id
+    if tag_code:payload["tagName"] = tag_code
+    if src_tag_name:payload["srcTagName"] = src_tag_name
+    if start_time:payload["startTime"] = start_time
+    if end_time:payload["endTime"] = end_time
+
+    url = f"{server_url}/tag/tagStatisticData"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
         resp = requests.post(url, params=payload)
