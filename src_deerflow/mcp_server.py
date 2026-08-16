@@ -954,6 +954,7 @@ def get_tag_statistic_data(
 ) -> str:
     """
     获取具体某一测点在一段时间内的统计数据，包括实际值、估计值、严重度、XX数量。
+    三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
     Args:
         tag_id: 测点ID(可选),精确匹配
         tag_code: 测点编码(可选),精确匹配
@@ -988,6 +989,29 @@ def get_tag_statistic_data(
     except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
 
+@mcp.tool()
+def get_environmental_indicator_infos(
+        keyword: Optional[str] = None,
+) -> str:
+    """
+    根据某一关键词查询相关的指标或者查询全部的指标。
+    Args:
+        keyword: 关键词(可选)，不配置默认查全部
+    Returns:
+        返回与关键词相关的指标与对应的限值
+"""
+    payload = {}
+    if keyword:payload["fuzzyName"] = keyword
+    url = f"{server_url}/tag/selectEnvironmentalExamplesByFuzzyMatching"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 #============工具相关MCP==================================================================
 
 @mcp.tool()
