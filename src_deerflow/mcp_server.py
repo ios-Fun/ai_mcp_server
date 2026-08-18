@@ -918,13 +918,15 @@ def get_tag_value_attime(
 @mcp.tool()
 def get_tags_of_instance(
         type: str,
-        parent_name: str
+        parent_name: str,
+        tagType: str
 ) -> str:
     """
     获取实体下的测点信息。
     Args:
         type: 实体类型,可选值: 设备、子系统、系统
         parent_name: 实体名称
+        tagType: 测点类型，必填，可选值：模拟量，开关量
     Returns:
         实体下所有测点信息列表
     """
@@ -933,6 +935,7 @@ def get_tags_of_instance(
     payload = {}
     if type:payload["type"] = type
     if parent_name:payload["parentName"] = parent_name
+    payload["tagType"] = tagType
     url = f"{server_url}/tag/getAllTags"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
@@ -1003,6 +1006,39 @@ def get_environmental_indicator_infos(
     payload = {}
     if keyword:payload["fuzzyName"] = keyword
     url = f"{server_url}/tag/selectEnvironmentalExamplesByFuzzyMatching"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def get_deep_peak_statistic(
+        unit_id,
+        load_rate,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
+) -> str:
+    """
+    深度调峰运行分析。用于分析机组在指定时间范围内的深度调峰运行情况
+    Args:
+        unit_id: 机组id
+        load_rate: 负荷率阈值
+        start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
+        end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
+    Returns:
+        返回统计数据：时间区间、最小值与对应时间
+"""
+    payload = {}
+    payload["unitId"] = unit_id
+    payload["loadRate"] = load_rate
+    if start_time:payload["startTime"] = start_time
+    if end_time:payload["endTime"] = end_time
+    url = f"{server_url}/tag/getDeepPeakStatistic"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
         resp = requests.post(url, params=payload)
