@@ -1048,6 +1048,43 @@ def get_deep_peak_statistic(
         return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def get_last_time_by_switch_name(
+        tagCode: str,
+        value: int,
+        startTime: str,
+        endTime: str
+) -> str:
+    """
+    开关量跳变情况查询
+    根据传入的测点编码，子系统id，查询该开关量的情况，参数传递仅有如下两种情况：
+    1.当传递value，且startTime和endTime均不传递时，查询的是当该开关量等于该值的最新时间
+    2.当传递startTime和endTime，且value不传递时，查询的是该开关量在当前时间窗口内每次变动的时间戳
+    当且仅当满足上述情况之一，该接口才能正确查询
+    Args:
+        tagCode       测点编码
+        value         开关量指定值（0或1）
+        startTime     查询窗口起始时间
+        endTime       查询窗口结束时间
+    Returns:
+        返回与关键词相关的指标与对应的限值
+"""
+    payload = {}
+    payload["tagName"] = tagCode
+    payload["value"] = value
+    payload["startTime"] = startTime
+    payload["endTime"] = endTime
+    url = f"{server_url}/tag/getLastTimeBySwitchName"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 #============工具相关MCP==================================================================
 
 @mcp.tool()
