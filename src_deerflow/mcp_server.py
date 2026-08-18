@@ -665,9 +665,9 @@ def get_instance_of_unit(
     """
     查询机组下与关键词相关且实例类型为instance_type的实例。
     Args:
-        unit_id: 机组ID（可选），查询特定机组下的设备
-        keyword: 关键词（可选），查询与关键词相关的设备
-        instance_type: 实例类型（可选），如 "系统"、"子系统"、"设备"、"部件"、"测点" 等
+        unit_id: 机组ID，查询特定机组下的设备
+        keyword: 关键词，查询与关键词相关的设备
+        instance_type: 实例类型，只能是 "系统"、"子系统"、"设备"、"部件"、"测点" 其中之一
     """
     payload = {}
     payload["unitId"] = unit_id
@@ -677,7 +677,7 @@ def get_instance_of_unit(
     url = f"{server_url}/unit/getInstanceOfUnit"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
-        resp = requests.post(url, params=payload, headers={"Content-Type": "application/json"})
+        resp = requests.post(url, params=payload)
         resp.raise_for_status()
         return resp.text
     except requests.exceptions.HTTPError as e:
