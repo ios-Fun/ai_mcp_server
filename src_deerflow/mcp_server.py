@@ -656,6 +656,34 @@ def get_sub_system_incident_list(
     except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
 
+@mcp.tool()
+def get_instance_of_unit(
+        unit_id: int,
+        keyword: str,
+        instance_type: str
+) -> str:
+    """
+    查询机组下与关键词相关且实例类型为instance_type的实例。
+    Args:
+        unit_id: 机组ID（可选），查询特定机组下的设备
+        keyword: 关键词（可选），查询与关键词相关的设备
+        instance_type: 实例类型（可选），如 "系统"、"子系统"、"设备"、"部件"、"测点" 等
+    """
+    payload = {}
+    payload["unitId"] = unit_id
+    payload["keyword"] = keyword
+    payload["instanceType"] = instance_type
+
+    url = f"{server_url}/unit/getInstanceOfUnit"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload, headers={"Content-Type": "application/json"})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 #============测点相关MCP==================================================================
 """
 工具列表:
