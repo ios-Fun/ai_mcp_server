@@ -659,19 +659,22 @@ def get_sub_system_incident_list(
 @mcp.tool()
 def get_instance_of_unit(
         unit_id: int,
-        keyword: str,
-        instance_type: str
+        instance_type: str,
+        keyword: Optional[str] = None
 ) -> str:
     """
     查询机组下与关键词相关且实例类型为instance_type的实例。
+    若不传keyword，则返回机组下instance_type的所有实例。
     Args:
         unit_id: 机组ID，查询特定机组下的设备
-        keyword: 关键词，查询与关键词相关的设备
+        keyword: 关键词(可选)，查询与关键词相关的设备
         instance_type: 实例类型，只能是 "系统"、"子系统"、"设备"、"部件"、"测点" 其中之一
+    :return:
+        实例属性列表，每项包含编码、名称、类别等字段
     """
     payload = {}
     payload["unitId"] = unit_id
-    payload["keyword"] = keyword
+    if keyword: payload["keyword"] = keyword
     payload["instanceType"] = instance_type
 
     url = f"{server_url}/unit/getInstanceOfUnit"
