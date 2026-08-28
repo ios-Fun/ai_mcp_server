@@ -1119,7 +1119,10 @@ def get_last_time_by_switch_name(
 #============工具相关MCP==================================================================
 
 @mcp.tool()
-def match_for_best(match_string: str) -> str:
+def match_for_best(
+        match_string: str,
+        match_type: Optional[str] = None
+) -> str:
     """
     实例模糊匹配工具。
     根据的“用户输入的完整问题”，从所有实例中模糊匹配出相似度最高的实例。
@@ -1128,17 +1131,18 @@ def match_for_best(match_string: str) -> str:
     获取最可能的实例列表后再进行后续操作。
     Args:
         match_string: 用于模糊匹配的字符串，如设备名称、测点名称等
+        match_type: 默认不传该参数，除非用户指定
     Returns:
         相似度最高的实例信息列表，相似度值最高的有多个，就返回多个，每个实例包含 id、name、code、type、similarity 字段
     """
-    return _match_for_best_impl(match_string)
+    return _match_for_best_impl(match_string, match_type)
 
-def _match_for_best_impl(match_string: str) -> str:
+def _match_for_best_impl(match_string: str, match_type: Optional[str] = None) -> str:
     """底层公共方法：实例模糊匹配，可供本地代码直接调用"""
     url = f"{server_url}/common/matchForBest"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: matchString={match_string}")
-        resp = requests.post(url, params={"matchString": match_string})
+        resp = requests.post(url, params={"matchString": match_string, "matchType": match_type})
         resp.raise_for_status()
         logger.info(f"result: {resp.text}")
         return resp.text
