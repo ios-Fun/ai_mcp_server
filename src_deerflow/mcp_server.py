@@ -477,7 +477,7 @@ def get_alarm_list(
         tag_source_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        asset_number: Optional[int] = None,
+        asset_id: Optional[int] = None,
         data_type: Optional[str] = None,
         current_status_name: Optional[str] = None,
         tag_id: Optional[int] = None,
@@ -486,19 +486,18 @@ def get_alarm_list(
 ) -> str:
     """
     查询测点报警单列表。支持多维度筛选告警信息。
-
     Args:
-        unit_id: 机组ID（可选），查询特定机组下的所有告警
-        tag_code: 测点编码（可选）
-        tag_source_name: 测点源标签点名（可选）
-        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
-        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
-        asset_number: 设备编号（可选）
-        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
-        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
-        tag_id: 测点ID（可选），精确查询某个测点的告警
-        monitor_point_id: 监测点ID（可选）
-        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+        :param unit_id: 机组ID（可选），查询特定机组下的所有告警
+        :param tag_code: 测点编码（可选）
+        :param tag_source_name: 测点源标签点名（可选）
+        :param start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        :param end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        :param asset_id: 设备id（可选）
+        :param data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        :param current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
+        :param tag_id: 测点ID（可选），精确查询某个测点的告警
+        :param monitor_point_id: 监测点ID（可选）
+        :param closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -506,7 +505,7 @@ def get_alarm_list(
     if tag_source_name: payload["tagSourceName"] = tag_source_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
-    if asset_number is not None: payload["assetNumber"] = asset_number
+    if asset_id is not None: payload["assetId"] = asset_id
     if data_type: payload["dataType"] = data_type
     if current_status_name: payload["currentStatusName"] = current_status_name
     if tag_id is not None: payload["tagId"] = tag_id
@@ -531,7 +530,7 @@ def unit_alarm_list_statistics(
         tag_source_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        asset_number: Optional[int] = None,
+        asset_id: Optional[int] = None,
         data_type: Optional[str] = None,
         current_status_name: Optional[str] = None,
         tag_id: Optional[int] = None,
@@ -542,17 +541,17 @@ def unit_alarm_list_statistics(
     查询报警单统计内容(与数据趋势无关)。支持多维度筛选告警信息。
     查询报警列表，返回报警类型解释及统计不同报警类型下的测点信息
     Args:
-        unit_id: 机组ID（可选），查询特定机组下的所有告警
-        tag_code: 测点编码（可选）
-        tag_source_name: 测点源标签点名（可选）
-        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
-        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
-        asset_number: 设备编号（可选）
-        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
-        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
-        tag_id: 测点ID（可选），精确查询某个测点的告警
-        monitor_point_id: 监测点ID（可选）
-        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+        :param unit_id: 机组ID（可选），查询特定机组下的所有告警
+        :param tag_code: 测点编码（可选）
+        :param tag_source_name: 测点源标签点名（可选）
+        :param start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        :param end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        :param asset_id: 设备id（可选）
+        :param data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        :param current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
+        :param tag_id: 测点ID（可选），精确查询某个测点的告警
+        :param monitor_point_id: 监测点ID（可选）
+        :param closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -560,7 +559,7 @@ def unit_alarm_list_statistics(
     if tag_source_name: payload["tagSourceName"] = tag_source_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
-    if asset_number is not None: payload["assetNumber"] = asset_number
+    if asset_id is not None: payload["assetId"] = asset_id
     if data_type: payload["dataType"] = data_type
     if current_status_name: payload["currentStatusName"] = current_status_name
     if tag_id is not None: payload["tagId"] = tag_id
