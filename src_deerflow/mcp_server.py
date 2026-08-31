@@ -985,18 +985,20 @@ def get_tag_statistic_data(
         src_tag_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
+        parent_name: Optional[str] = None
 ) -> str:
     """
     获取具体某一测点在一段时间内的统计数据，包括实际值、估计值、严重度、XX数量。
     三个标识参数(tag_id/tag_code/src_tag_name)只需填写一个即可,优先级为: tag_code > tag_id > src_tag_name
     Args:
-        tag_id: 测点ID(可选),精确匹配
-        tag_code: 测点编码(可选),精确匹配
-        src_tag_name: 源标签点名(可选),精确匹配
-        start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
-        end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
+        :param tag_id: 测点ID(可选),精确匹配
+        :param tag_code: 测点编码(可选),精确匹配
+        :param src_tag_name: 源标签点名(可选),精确匹配
+        :param start_time: 开始时间(可选),格式如 "2024-01-01T00:00:00+08:00"
+        :param end_time: 结束时间(可选),格式如 "2024-01-07T23:59:59+08:00"
+        :param parent_name: 父级示例名称(可选),不提及此参数时默认不传
     Returns:
-        实体下所有测点统计信息
+        实体下所有测点统计信息，若配置了父级示例名称，则返回父级示例名称下的所有测点统计信息
     """
     if not (tag_id or tag_code or src_tag_name): return "至少传入一个测点参数！"
     if not start_time and not end_time:
@@ -1011,6 +1013,7 @@ def get_tag_statistic_data(
     if src_tag_name:payload["srcTagName"] = src_tag_name
     if start_time:payload["startTime"] = start_time
     if end_time:payload["endTime"] = end_time
+    if parent_name:payload["parentName"] = parent_name
 
     url = f"{server_url}/tag/tagStatisticData"
     try:
