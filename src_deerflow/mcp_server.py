@@ -1118,6 +1118,30 @@ def get_last_time_by_switch_name(
         return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"错误：请求异常: {str(e)}"
+
+@mcp.tool()
+def get_model_info(
+        tagId: int
+) -> str:
+    """
+    根据测点ID获取模型信息。
+    Args:
+        tagId: 测点ID
+    Returns:
+        模型信息
+    """
+    payload = {}
+    payload["tagId"] = tagId
+    url = f"{server_url}/tag/getTagsOfModel"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload)
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 #============工具相关MCP==================================================================
 
 @mcp.tool()
