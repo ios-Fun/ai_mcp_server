@@ -35,41 +35,60 @@ logger = logging.getLogger(__name__)
 
 # 设备的健康状态评估 -- cg_device_healthy
 @mcp.tool()
-def cg_device_healthy(orginal: str, thread_id: str = "") -> str:
+def cg_device_healthy(device: str, startTime: str, endTime: str, thread_id: str) -> str:
     """
-
-    :param orginal: 原文
-    :param thread_id: 线程id
+    设备健康情况查询
+    根据传入的设备名称，查询该设备的诊断单情况
+    Args:
+        device       设备名称
+        startTime: 开始时间,格式如 "2024-01-01T00:00:00+08:00",不传则默认为6小时前
+        endTime: 结束时间,格式如 "2024-01-07T23:59:59+08:00",不传则默认为当前时间
+        thread_id: deerflow执行线程id
     Returns:
-        字符串
+        返回与关键词相关的指标与对应的诊断单
     """
-    logging.info(f"cg_device_healthy: {orginal}")
-
-    # rasa
-    rasa_url = os.getenv("RASA_URL")
-    rasa_data = {
-        "sender":"sender002", "message":orginal
-    }
-    rasa_response = requests.post(url=rasa_url, json=rasa_data, headers={"Content-Type": "application/json"})
-    logging.info(f"rasa_response: {rasa_response.text}")
-    
-    rasa_obj = rasa_response.text
-    data = json.loads(rasa_obj)
-
-    logging.info(f"first: {data[0]}")
-    first_text = data[0]["text"]
-    logging.info(f"first_text: {first_text}")
-    
-    second_custom = data[1]["custom"]
+    # logging.info(f"cg_device_healthy: {orginal}")
+    #
+    # # rasa
+    # rasa_url = os.getenv("RASA_URL")
+    # rasa_data = {
+    #     "sender":"sender002", "message":orginal
+    # }
+    # rasa_response = requests.post(url=rasa_url, json=rasa_data, headers={"Content-Type": "application/json"})
+    # logging.info(f"rasa_response: {rasa_response.text}")
+    #
+    # rasa_obj = rasa_response.text
+    # data = json.loads(rasa_obj)
+    #
+    # logging.info(f"first: {data[0]}")
+    # first_text = data[0]["text"]
+    # logging.info(f"first_text: {first_text}")
+    #
+    # second_custom = data[1]["custom"]
+    # logging.info(f"second_custom: {second_custom}")
+    second_custom = {}
+    second_custom["device"] = device
+    second_custom["startTime"] = startTime
+    second_custom["endTime"] = endTime
     logging.info(f"second_custom: {second_custom}")
 
-    java_url = os.getenv("SERVER_URL")+"/device/healthy/v3"
+    java_url = os.getenv("SERVER_URL") + "/device/healthy/v3"
     logging.info(f"java_url: {java_url}")
     response = requests.post(url=java_url, json=second_custom, headers={"Content-Type": "application/json"})
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"cg_device_healthy response: {response.text}")
-        return response.text
+        if thread_id:
+            try:
+                resp_data = json.loads(response.text)
+                defect_ids = resp_data.get("cached_defectIds")
+                if defect_ids is not None:
+                    redis_key = f"{thread_id}_cached_defectIds"
+                    memoryRedis.set_cache(redis_key, defect_ids)
+                    logger.info(f"cached defectIds -> {redis_key}: {defect_ids}")
+            except (json.JSONDecodeError, TypeError, ValueError) as e:
+                logger.info(f"cg_device_healthy cache write skipped: {e}")
+            return response.text
     else:
         return "发送失败"
 
@@ -336,7 +355,7 @@ def unit_healthy(
 
 @mcp.tool()
 def unit_select_incidents(
-        unit_name: str,
+        unit_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         closed: Optional[bool] = None,
@@ -346,12 +365,13 @@ def unit_select_incidents(
     根据机组名模糊匹配机组，返回诊断单信息（含 incidentId 等）。
 
     Args:
-        unit_name: 机组名称（必填），如 "京燃"
+        unit_name: 机组名称（可选），如 "京燃"
         start_time: 开始时间（格式:YYYY-MM-DDT00:00:00Z）
         end_time: 结束时间（格式:YYYY-MM-DDT00:00:00Z）
         closed: 是否已关闭（可选）
     """
-    payload = {"unitName": unit_name}
+    payload = {}
+    if unit_name: payload["unitName"] = unit_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
     if closed is not None: payload["closed"] = closed
@@ -400,6 +420,43 @@ def unit_graph_show(incident_ids: List[int]) -> str:
         incident_ids,
         formatter=lambda s: _realtime_pattern.sub("", s)
     )
+
+@mcp.tool()
+def default_graph_detail(
+        default_name: Optional[str] = None,
+        tag_list: Optional[List] = None,
+        device_name: Optional[str] = None,
+) -> str:
+    """
+    根据测点id列表，或故障名称，严格匹配一个故障模式，并返回一个markdown文本故障模式结构，其中包含故障模型名，故障模型图谱结构，特征输入，计算逻辑
+    或者设备名称，则返回这个设备下所有的故障模型名称
+    当只输入default_name时，匹配一个名称最为相似的故障模式，返回其故障模式详情
+    当只输入tag_list时，匹配一个同时包括这两个测点的故障模式，返回其故障模式详情
+    当只输入device_name，返回该设备下所有的故障模式名称
+    当三者均输入时，优先返回按照故障模式名称匹配的内容
+    当三者均不输入时，返回未成挂匹配的固定信息
+
+    Args:
+        default_name: 故障名称（纯文本，如循环水泵A汽蚀）
+        tag_list: 测点id列表，注意，只能是测点的id，不要传入故障模式id或设备的id
+        device_name: 设备名称（纯文本，如机组循环水泵A）
+    R
+    """
+    payload = {}
+    if default_name: payload["defectName"] = default_name
+    if tag_list: payload["tagLists"] = tag_list
+    if device_name: payload["deviceName"] = device_name
+
+    url = f"{server_url}/tag/getGraphByTagList"
+    try:
+        logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
+        resp = requests.post(url, params=payload, headers={"Content-Type": "application/json"})
+        resp.raise_for_status()
+        return resp.text
+    except requests.exceptions.HTTPError as e:
+        return f"错误：后端接口请求失败，状态码：{e.response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"错误：请求异常: {str(e)}"
 
 @mcp.tool()
 def unit_tags_realtime(incident_ids: List[int]) -> str:
@@ -1085,29 +1142,29 @@ def get_deep_peak_statistic(
 @mcp.tool()
 def get_last_time_by_switch_name(
         tagCode: str,
-        value: int,
-        startTime: str,
-        endTime: str
+        value: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
 ) -> str:
     """
     开关量跳变情况查询
-    根据传入的测点编码，子系统id，查询该开关量的情况，参数传递仅有如下两种情况：
-    1.当传递value，且startTime和endTime均不传递时，查询的是当该开关量等于该值的最新时间
-    2.当传递startTime和endTime，且value不传递时，查询的是该开关量在当前时间窗口内每次变动的时间戳
+    根据传入的测点编码，查询该开关量的情况，参数传递仅有如下两种情况：
+    1.当传递value，且start_time和end_time均不传递时，查询的是当该开关量等于该值的最新时间
+    2.当传递start_time和end_time，且value不传递时，查询的是该开关量在当前时间窗口内每次变动的时间戳
     当且仅当满足上述情况之一，该接口才能正确查询
     Args:
         tagCode       测点编码
-        value         开关量指定值（0或1）
-        startTime     查询窗口起始时间
-        endTime       查询窗口结束时间
+        value         开关量指定值（0或1，可选）
+        start_time     查询窗口起始时间（可选）
+        end_time       查询窗口结束时间（可选）
     Returns:
         返回与关键词相关的指标与对应的限值
 """
     payload = {}
     payload["tagName"] = tagCode
-    payload["value"] = value
-    payload["startTime"] = startTime
-    payload["endTime"] = endTime
+    if value: payload["value"] = value
+    if start_time: payload["startTime"] = start_time
+    if end_time: payload["endTime"] = end_time
     url = f"{server_url}/tag/getLastTimeBySwitchName"
     try:
         logger.info(f"POST 请求发送至: {url}, 参数: {payload}")
@@ -1157,7 +1214,7 @@ def match_for_best(
     获取最可能的实例列表后再进行后续操作。
     Args:
         match_string: 用于模糊匹配的字符串，如设备名称、测点名称等
-        match_type: 默认不传该参数，除非用户指定
+        match_type: 实例类型，如设备、系统、机组、测点等，默认不传该参数，除非用户指定
     Returns:
         相似度最高的实例信息列表，相似度值最高的有多个，就返回多个，每个实例包含 id、name、code、type、similarity 字段
     """
