@@ -544,17 +544,17 @@ def get_alarm_list(
     """
     查询测点报警单列表。支持多维度筛选告警信息。
     Args:
-        :param unit_id: 机组ID（可选），查询特定机组下的所有告警
-        :param tag_code: 测点编码（可选）
-        :param tag_source_name: 测点源标签点名（可选）
-        :param start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
-        :param end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
-        :param asset_id: 设备id（可选）
-        :param data_type: 数据类型（可选），如 "告警"、"缺陷" 等
-        :param current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
-        :param tag_id: 测点ID（可选），精确查询某个测点的告警
-        :param monitor_point_id: 监测点ID（可选）
-        :param closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+        unit_id: 机组ID（可选），查询特定机组下的所有告警
+        tag_code: 测点编码（可选）
+        tag_source_name: 测点源标签点名（可选）
+        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        asset_id: 设备id（可选），可根据设备id筛选报警单
+        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
+        tag_id: 测点ID（可选），精确查询某个测点的告警
+        monitor_point_id: 监测点ID（可选）
+        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -593,22 +593,24 @@ def unit_alarm_list_statistics(
         tag_id: Optional[int] = None,
         monitor_point_id: Optional[int] = None,
         closed: Optional[bool] = None,
+        group_by_asset_name: Optional[bool] = None,
 ) -> str:
     """
     查询报警单统计内容(与数据趋势无关)。支持多维度筛选告警信息。
     查询报警列表，返回报警类型解释及统计不同报警类型下的测点信息
     Args:
-        :param unit_id: 机组ID（可选），查询特定机组下的所有告警
-        :param tag_code: 测点编码（可选）
-        :param tag_source_name: 测点源标签点名（可选）
-        :param start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
-        :param end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
-        :param asset_id: 设备id（可选）
-        :param data_type: 数据类型（可选），如 "告警"、"缺陷" 等
-        :param current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
-        :param tag_id: 测点ID（可选），精确查询某个测点的告警
-        :param monitor_point_id: 监测点ID（可选）
-        :param closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+        unit_id: 机组ID（可选），查询特定机组下的所有告警
+        tag_code: 测点编码（可选）
+        tag_source_name: 测点源标签点名（可选）
+        start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
+        end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
+        asset_id: 设备id（可选）
+        data_type: 数据类型（可选），如 "告警"、"缺陷" 等
+        current_status_name: 当前状态名称（可选），如 "新报警单"、"已关闭"等
+        tag_id: 测点ID（可选），精确查询某个测点的告警
+        monitor_point_id: 监测点ID（可选）
+        closed: 是否已关闭（可选），true表示查询已关闭的告警，false表示未关闭的，all表示为全部，默认为false
+        group_by_asset_name: 是否按照设备名称分组统计，默认不传该参数
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
@@ -622,6 +624,7 @@ def unit_alarm_list_statistics(
     if tag_id is not None: payload["tagId"] = tag_id
     if monitor_point_id is not None: payload["monitorPointId"] = monitor_point_id
     if closed is not None: payload["closed"] = closed
+    if group_by_asset_name: payload["groupByAssetName"] = group_by_asset_name
 
     url = f"{server_url}/unit/getAlarmListStatistics"
     try:
