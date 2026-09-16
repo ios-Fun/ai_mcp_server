@@ -7,7 +7,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 # Copy the rest of the application
-COPY ./src_deerflow /app/src
+# COPY ./src_deerflow /app/src
+
+COPY ./src_deerflow /app/src_deerflow
 
 COPY app.py /app.py
 
