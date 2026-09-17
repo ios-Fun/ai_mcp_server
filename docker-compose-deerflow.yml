@@ -1,11 +1,13 @@
 services:
   mcp:
-    image: mcp_server:260605
+    image: mcp_deerflow:260915
     ports:
       - "8084:8084"
     # network_mode: "host"
     volumes:
-      - "./src/:/app/src"
-    command: ["python", "/app/src/mcp_server.py"]
+      - "./src_deerflow/:/app/src_deerflow"
+    environment:
+      - PYTHONPATH=/app
+    command: ["python", "/app/src_deerflow/mcp_server.py"]
     # command: ["uvicorn", "src/mcp_server:app", "--host", "0.0.0.0", "--port", "8083"]
     # ["uvicorn", "mcp_server:app", "--host", "0.0.0.0", "--port", "8083"] 
