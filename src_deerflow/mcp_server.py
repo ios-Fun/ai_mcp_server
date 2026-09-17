@@ -26,6 +26,7 @@ app = FastAPI()
 # Initialize MCP server
 mcp = FastMCP("ClickHouse MCP Server")
 server_url = os.getenv("SERVER_URL")
+server_url1 = os.getenv("SERVER_URL1")
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -195,6 +196,42 @@ def cg_tagsInfoList( thread_id: str = "") -> str:
     logging.info(f"cg_tagsInfoList: {cached_defectIds}")
     java_url = os.getenv("SERVER_URL")+"/device/tagsInfoList"
     response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"cg_tagsInfoList response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+# 获取所有机组 -- get_unit_list
+@mcp.tool()
+def get_unit_list() -> str:
+    """
+    获取所有机组
+    Returns:
+        字典信息
+    """
+
+    java_url = os.getenv("SERVER_URL")+"/unit/getUnitList"
+    response = requests.post(url=java_url)
+    logging.info(f"response.status_code: {response.status_code}")
+    if response.status_code == 200:
+        logging.info(f"cg_tagsInfoList response: {response.text}")
+        return response.text
+    else:
+        return "发送失败"
+# 获取指定机组下所有指标 -- query_indicators
+@mcp.tool()
+def query_indicators(unit_id: int) -> str:
+    """
+    获取指定机组下所有指标
+    parma: unit_id: 机组ID，
+    Returns:
+        字典信息
+    """
+    payload = {}
+    payload["unitId"] = unit_id
+    java_url = os.getenv("SERVER_URL")+"/unit/getIndicators"
+    response = requests.post(url=java_url,params=payload)
     logging.info(f"response.status_code: {response.status_code}")
     if response.status_code == 200:
         logging.info(f"cg_tagsInfoList response: {response.text}")
