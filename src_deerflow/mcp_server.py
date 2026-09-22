@@ -745,7 +745,7 @@ def unit_mount_path(
 @mcp.tool()
 def get_alarm_list(
         unit_id: Optional[int] = None,
-        tag_code: Optional[str] = None,
+        tag_code: Optional[list[str]] = None,
         tag_source_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
@@ -760,7 +760,7 @@ def get_alarm_list(
     查询测点报警单列表。支持多维度筛选告警信息。
     Args:
         unit_id: 机组ID（可选），查询特定机组下的所有告警
-        tag_code: 测点编码（可选）
+        tag_code: 测点编码列表（可选）
         tag_source_name: 测点源标签点名（可选）
         start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
         end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
@@ -773,7 +773,7 @@ def get_alarm_list(
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
-    if tag_code: payload["tagName"] = tag_code
+    if tag_code: payload["tagNames"] = tag_code
     if tag_source_name: payload["tagSourceName"] = tag_source_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
