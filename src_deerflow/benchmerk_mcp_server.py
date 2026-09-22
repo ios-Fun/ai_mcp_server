@@ -92,7 +92,107 @@ def benchmarkEvaluation(nodeId: Optional[int] = None) -> str:
         return response.text
     else:
         return "发送失败"
+# 获取指定时间点的所有评估单信息 -- getEvaluationList
+@mcp.tool()
+def getEvaluationList(unitId,startDate: Optional[str] = None,endDate: Optional[str] = None) -> str:
+    """
+    获取指定时间点的所有评估单信息
 
+    Args:
+        unitId（非必填）机组ID
+        startDate: 开始时间  格式：2026-09-01 01:00:00
+        endDate: 结束时间  格式：2026-09-01 01:00:00
+
+    Returns:
+        str: 获取指定时间点的所有评估单信息
+    """
+    param = {}
+    param["unitId"] = unitId
+    param["startDate"] = startDate
+    param["endDate"] = endDate
+
+    logging.info(f"param: {startDate},{endDate}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getEvaluationList"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+@mcp.tool()
+def getBenchmarkByTagCode(tagCode) -> str:
+    """
+    获取指标的标杆值和实际值
+
+    Args:
+        tagCode（非必填）指标编码
+
+    Returns:
+        str: 获取指标的标杆值和实际值
+    """
+    param = {}
+    param["tagCode"] = tagCode
+
+    logging.info(f"param: {tagCode}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getBenchmarkByTagCode"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+@mcp.tool()
+def getRangeValue(evaluationId) -> str:
+    """
+    获取单子的工况测点信息
+
+    Args:
+        evaluationId 寻优单Id
+
+    Returns:
+        str: 获取单子的工况测点信息
+    """
+    param = {}
+    param["evaluationId"] = evaluationId
+
+    logging.info(f"param: {evaluationId}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getRangeValue"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+@mcp.tool()
+def getLastEvaluation(evaluationId) -> str:
+    """
+    获取历史和最新的寻优单记录
+
+    Args:
+        evaluationId 寻优单Id
+
+    Returns:
+        str: 获取历史和最新的寻优单记录
+    """
+    param = {}
+    param["evaluationId"] = evaluationId
+
+    logging.info(f"param: {evaluationId}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getLastEvaluation"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
