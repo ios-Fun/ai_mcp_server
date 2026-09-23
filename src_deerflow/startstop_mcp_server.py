@@ -52,7 +52,7 @@ def startStopStatic(
     Args:
         startTime: 开始时间字符串
         endTime: 结束时间字符串
-        nodeId: 实体节点id，可选
+        nodeId: 实体节点id
     Returns:
         str: 指定时间范围内启动次数、停机次数
     """
@@ -172,6 +172,42 @@ def startStopRecord(
     logging.info(f"param: {param}")
 
     java_url = os.getenv("S_SERVER_URL") + "/startStop/record"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(
+            url=java_url,
+            json=param,
+            timeout=10
+        )
+        logging.info(f"response.status_code: {response.status_code}, response.text: {response.text}")
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+@mcp.tool()
+def stageRecord(
+        eventName: str,
+        nodeId: Optional[int] = None
+) -> str:
+    """
+   启停阶段识别
+
+    Args:
+        nodeId: 节点id
+        eventName：事件类型启动/停止
+    Returns:
+        str: 返回启动各阶段的完成情况和总耗时
+    """
+    param = {
+        "nodeId": nodeId,
+        "eventName": eventName
+    }
+    logging.info(f"param: {param}")
+
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/stage/record"
     logging.info(f"java_url: {java_url}")
     try:
         response = requests.post(
