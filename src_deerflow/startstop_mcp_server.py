@@ -7,7 +7,7 @@ from starlette.routing import Mount, Route
 from starlette.applications import Starlette
 from starlette.responses import Response
 from typing import Optional, List, Dict, Any
-from src_deerflow.redis_client import memoryRedis
+# from src_deerflow.redis_client import memoryRedis
 from concurrent.futures import ThreadPoolExecutor, as_completed
 # import clickhouse_connect
 import asyncio
