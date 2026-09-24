@@ -95,9 +95,9 @@ def cg_device_healthy(device: str, startTime: str, endTime: str, thread_id: str)
     else:
         return "发送失败"
 
-# 显示故障模式 -- cg_graphshow
 @mcp.tool()
-def cg_graphshow( thread_id: str = "") -> str:
+def cg_graphshow(thread_id: str = "",
+                 defect_ids: Optional[List] = None) -> str:
     """
     获取设备故障模式推导图（知识图谱）。
 
@@ -112,33 +112,45 @@ def cg_graphshow( thread_id: str = "") -> str:
 
     参数：
         thread_id: DeerFlow 执行线程 ID，用于关联当前诊断上下文
+        defect_ids: 故障ID列表，若提供则直接使用，不再从Redis读取
 
     返回：
         故障模式推导图的结构化数据（JSON 字符串），包含节点和边的关系
     """
+    # 优先使用传入的 defect_ids，为空时才从 Redis 读取
+    if defect_ids:
+        query_defect_ids = defect_ids
+        logger.info(f"cg_graphshow: Using provided defect_ids directly: {query_defect_ids}")
+    else:
+        redis_key = f"{thread_id}_cached_defectIds"
+        if memoryRedis.has_key(redis_key):
+            value = memoryRedis.get_cache(redis_key)
+            query_defect_ids = value
+            logger.info(f"Executing tool key: {redis_key}, value: {value}")
+        else:
+            logger.warning(f"cg_graphshow: No defect_ids provided and Redis key not found: {redis_key}")
+            return "未找到有效的故障ID，请传入defect_ids或确保诊断上下文中已缓存"
 
-    cached_defectIds: list
-    redis_key = f"{thread_id}_cached_defectIds"
-    if memoryRedis.has_key(redis_key):
-        value = memoryRedis.get_cache(redis_key)
-        cached_defectIds = value
-        logger.info(f"Executing tool key: {redis_key}, value: {value}")
+    logging.info(f"cg_graphshow final query ids: {query_defect_ids}")
 
-    logging.info(f"cg_graphshow: {cached_defectIds}")
-    # java_url = os.getenv("SERVER_URL").join("/device/grpah/show")
-    java_url = os.getenv("SERVER_URL")+"/device/graph/show"
+    java_url = os.getenv("SERVER_URL") + "/device/graph/show"
 
-    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    response = requests.post(
+        url=java_url,
+        json=query_defect_ids,
+        headers={"Content-Type": "application/json"}
+    )
     logging.info(f"response.status_code: {response.status_code}")
+
     if response.status_code == 200:
         logging.info(f"cg_graphshow response: {response.text}")
         return response.text
     else:
         return "发送失败"
 
-# 查询rag信息 -- cg_deviceRag
 @mcp.tool()
-def cg_deviceRag( thread_id: str = "") -> str:
+def cg_deviceRag(thread_id: str = "",
+                 defect_ids: Optional[List] = None) -> str:
     """
     查询设备故障知识库（RAG），获取与当前诊断相关的辅助知识。
 
@@ -152,6 +164,7 @@ def cg_deviceRag( thread_id: str = "") -> str:
 
     参数：
         thread_id: DeerFlow 执行线程 ID，用于关联当前诊断上下文
+        defect_ids: 故障ID列表，若提供则直接使用，不再从Redis读取，格式为
 
     返回：
         知识库检索结果（JSON 字符串），包含相关故障案例和处理建议。
@@ -161,18 +174,31 @@ def cg_deviceRag( thread_id: str = "") -> str:
     注意：
         RAG 结果仅作为辅助参考，不得覆盖实际的诊断数据和测点分析结论。
     """
-    cached_defectIds: list
-    redis_key = f"{thread_id}_cached_defectIds"
-    if memoryRedis.has_key(redis_key):
-        value = memoryRedis.get_cache(redis_key)
-        cached_defectIds = value
-        logger.info(f"Executing tool key: {redis_key}, value: {value}")
-    logging.info(f"cg_deviceRag: {cached_defectIds}")
-    java_url = os.getenv("SERVER_URL")+"/device/rag/v2"
-    
+    # 优先使用传入的 defect_ids，为空时才从 Redis 读取
+    if defect_ids:
+        query_defect_ids = defect_ids
+        logger.info(f"cg_deviceRag: Using provided defect_ids directly: {query_defect_ids}")
+    else:
+        redis_key = f"{thread_id}_cached_defectIds"
+        if memoryRedis.has_key(redis_key):
+            value = memoryRedis.get_cache(redis_key)
+            query_defect_ids = value
+            logger.info(f"Executing tool key: {redis_key}, value: {value}")
+        else:
+            logger.warning(f"cg_deviceRag: No defect_ids provided and Redis key not found: {redis_key}")
+            return "未找到有效的故障ID，请传入defect_ids或确保诊断上下文中已缓存"
 
-    response = requests.post(url=java_url, json=cached_defectIds, headers={"Content-Type": "application/json"})
+    logging.info(f"cg_deviceRag final query ids: {query_defect_ids}")
+
+    java_url = os.getenv("SERVER_URL") + "/device/rag/v2"
+
+    response = requests.post(
+        url=java_url,
+        json=query_defect_ids,
+        headers={"Content-Type": "application/json"}
+    )
     logging.info(f"response.status_code: {response.status_code}")
+
     if response.status_code == 200:
         logging.info(f"cg_deviceRag response: {response.text}")
         return response.text
@@ -745,7 +771,7 @@ def unit_mount_path(
 @mcp.tool()
 def get_alarm_list(
         unit_id: Optional[int] = None,
-        tag_code: Optional[str] = None,
+        tag_code: Optional[list[str]] = None,
         tag_source_name: Optional[str] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
@@ -760,7 +786,7 @@ def get_alarm_list(
     查询测点报警单列表。支持多维度筛选告警信息。
     Args:
         unit_id: 机组ID（可选），查询特定机组下的所有告警
-        tag_code: 测点编码（可选）
+        tag_code: 测点编码列表（可选）
         tag_source_name: 测点源标签点名（可选）
         start_time: 开始时间（可选），查询 firsttouchtime >= 该时间的告警
         end_time: 结束时间（可选），查询 lasttouchtime <= 该时间的告警
@@ -773,7 +799,7 @@ def get_alarm_list(
     """
     payload = {}
     if unit_id is not None: payload["unitId"] = unit_id
-    if tag_code: payload["tagName"] = tag_code
+    if tag_code: payload["tagNames"] = tag_code
     if tag_source_name: payload["tagSourceName"] = tag_source_name
     if start_time: payload["startTime"] = start_time
     if end_time: payload["endTime"] = end_time
