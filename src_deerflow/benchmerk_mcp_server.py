@@ -193,6 +193,34 @@ def getLastEvaluation(evaluationId) -> str:
         return response.text
     else:
         return "发送失败"
+@mcp.tool()
+def getEvaluationByTagCode(tagCode,startDate: Optional[str] = None,endDate: Optional[str] = None) -> str:
+    """
+    获取指标的目标范围因素信息
+
+    Args:
+        tagCode 测点/指标编码
+        startDate: 开始时间 （非必填） 格式：2026-09-01 01:00:00
+        endDate: 结束时间 （非必填） 格式：2026-09-01 01:00:00
+
+    Returns:
+        str: 获取指标的目标范围因素信息
+    """
+    param = {}
+    param["tagCode"] = tagCode
+    param["startDate"] = startDate
+    param["endDate"] = endDate
+
+    logging.info(f"param: {startDate},{endDate}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getEvaluationByTagCode"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, json=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
