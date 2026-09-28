@@ -221,6 +221,38 @@ def getEvaluationByTagCode(tagCode,startDate: Optional[str] = None,endDate: Opti
         return response.text
     else:
         return "发送失败"
+
+@mcp.tool()
+def getSimilarityBenchmarkDetails(userMessage: str) -> str:
+    """
+    根据用户的自然语言查询，检索并返回与之匹配的机组标杆指标体系详细数据。
+
+    当用户询问某个设备、系统或运行工况的标杆值、基准范围、影响因素或对标详情时调用此工具。
+    返回结果为结构化 Markdown 表格，已按业务角色清洗并分为三类：
+    - 目标指标 (Target)：包含名称、描述、单位、公式/别名
+    - 范围/基准指标 (Range)：包含名称、基准值、偏差阈值、单位、描述
+    - 影响因素指标 (Factor)：包含名称、有效性方向、重要性排序、单位、公式/别名
+
+    Args:
+        userMessage: 用户关于对标内容的自然语言描述，例如"锅炉主蒸汽温度标杆"、"汽轮机热耗率影响因素"等
+
+    Returns:
+        与查询内容匹配的标杆指标详情（Markdown 格式），可直接用于分析、对比或生成运行优化建议
+    """
+    param = {}
+    param["userMessage"] = userMessage
+
+    logging.info(f"param: {userMessage}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getSimilarityBenchmarkDetails"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, params=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
