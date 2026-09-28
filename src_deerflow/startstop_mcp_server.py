@@ -224,6 +224,44 @@ def stageRecord(
         logging.error(f"请求异常: {str(e)}")
         return f"请求异常：{str(e)}"
 
+
+@mcp.tool()
+def startStopCondition(
+        condition: str,
+        nodeId: Optional[int] = None
+) -> str:
+    """
+   启停阶段识别
+
+    Args:
+        condition: 指定阶段核心判定条件
+        nodeId：整体事件id
+    Returns:
+        str: 返回指定阶段核心参数当前值、标准值和判断结果
+    """
+    param = {
+        "condition": condition,
+        "nodeId": nodeId
+    }
+    logging.info(f"param: {param}")
+
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/startStopCondition"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(
+            url=java_url,
+            json=param,
+            timeout=10
+        )
+        logging.info(f"response.status_code: {response.status_code}, response.text: {response.text}")
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
