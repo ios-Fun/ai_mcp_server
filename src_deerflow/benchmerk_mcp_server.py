@@ -253,6 +253,41 @@ def getSimilarityBenchmarkDetails(userMessage: str) -> str:
     else:
         return "发送失败"
 
+@mcp.tool()
+def resolve_formula_lineage(root_indicator_name: str) -> str:
+    """
+    解析指标公式链路并生成LLM可读的分析文本。
+
+    当用户询问某个指标的计算逻辑、数据来源、公式拆解或需要分析指标血缘关系时调用此工具。
+    该工具会递归查询图数据库，自动展开所有子公式变量，处理循环引用，
+    最终返回一棵完整的、带缩进的公式分解树文本，可直接作为上下文发送给大模型进行分析。
+
+    Args:
+        root_indicator_name: 顶层指标的原始名称（baseName），例如 "GenSCCR"、"净利润"、"营业收入"。
+                             必须是指标的【原名称】而非显示名称或编码。
+
+    Returns:
+        格式化的公式分解树纯文本字符串。包含每个节点的名称、完整公式及层级关系。
+        若节点不存在会标记 [NOT_FOUND]，若存在循环引用会标记 [CIRCULAR REFERENCE]。
+    """
+    param = {}
+    param["indicatorName"] = root_indicator_name
+
+    logging.info(f"param: {root_indicator_name}")
+
+    java_url = os.getenv("B_SERVER_URL") + "/benchmark/getIndicatorByName"
+    logging.info(f"java_url: {java_url}")
+    response = requests.post(url=java_url, params=param, headers={"Content-Type": "application/json"})
+    logging.info(f"response.status_code: {response.text}")
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+    if response.status_code == 200:
+        return response.text
+    else:
+        return "发送失败"
+
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
