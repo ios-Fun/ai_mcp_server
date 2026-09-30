@@ -262,6 +262,115 @@ def startStopCondition(
         logging.error(f"请求异常: {str(e)}")
         return f"请求异常：{str(e)}"
 
+@mcp.tool()
+def get_event_status(
+        resultId: str
+) -> str:
+    """
+    获取事件状态
+    Args:
+        resultId: 记录id (可为启停、过程、子过程的result_id)
+    Returns:
+        str: 返回事件状态
+    """
+    param = {
+        "resultId": resultId
+    }
+    logging.info(f"param: {param}")
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/event/status"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(url=java_url,params=param)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+
+@mcp.tool()
+def get_event_report(
+        resultId:str,
+        startTime: str,
+        endTime: str
+) -> str:
+    """
+    获取事件报告
+    Args:
+        resultId: 记录id (启停的result_id)
+        startTime: 开始时间
+        endTime: 结束时间
+    Returns:
+        str: 返回事件报警记录
+    """
+    param = {
+        "resultId": resultId,
+        "startTime": startTime,
+        "endTime": endTime
+    }
+    logging.info(f"param: {param}")
+
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/event/report"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(url=java_url,json=param)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+
+@mcp.tool()
+def get_best_record (
+        unitId:str
+) -> str:
+    """
+    获取最佳记录
+    Args:
+        unitId: 单元id
+    Returns:
+        str: 返回最佳记录
+    """
+    param = {
+        "unitId": unitId
+    }
+    logging.info(f"param: {param}")
+
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/bestRecord"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(url=java_url,params=param)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+
+@mcp.tool()
+def get_material_statistics() -> str:
+    """
+    获取物料统计
+    Returns:
+        str: 返回物料统计
+    """
+    java_url = os.getenv("S_SERVER_URL") + "/startStop/material/statistics"
+    logging.info(f"java_url: {java_url}")
+    try:
+        response = requests.post(url=java_url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return f"发送失败，状态码：{response.status_code}"
+    except Exception as e:
+        logging.error(f"请求异常: {str(e)}")
+        return f"请求异常：{str(e)}"
+
+
 # Create SSE transport
 transport = SseServerTransport("/messages/")
 
